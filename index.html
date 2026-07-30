@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Vui lên bạn ơi</title>
+<title>Vui lên đi Thảo</title>
 <script>
   (function() {
     var h = new Date().getHours();
@@ -204,7 +204,7 @@
 <button id="mute-btn" class="muted" aria-label="Bật/tắt nhạc">🔇</button>
 
 <div class="center">
-  <div class="message" id="btn">☀️ Vui lên bạn ơi ☀️</div>
+  <div class="message" id="btn">☀️ Vui lên đi Thảo ☀️</div>
   <div id="combo-bar-wrap"><div id="combo-bar"></div></div>
 </div>
 
@@ -213,7 +213,7 @@
 <script>
 // ============ TIME-OF-DAY MODE ============
 const isNight = document.documentElement.classList.contains('night');
-document.title = isNight ? 'Chúc bạn ngủ ngon' : 'Vui lên bạn ơi';
+document.title = isNight ? 'Chúc bạn ngủ ngon' : 'Vui lên đi Thảo';
 document.getElementById('moon-hit').setAttribute('aria-label', isNight ? 'mặt trăng' : 'mặt trời');
 
 // ============ BACKGROUND MUSIC ============
@@ -271,7 +271,7 @@ muteBtn.addEventListener('pointerdown', e => e.stopPropagation());
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const btn = document.getElementById('btn');
-btn.textContent = isNight ? '✨ Chúc bạn ngủ ngon ✨' : '☀️ Vui lên bạn ơi ☀️';
+btn.textContent = isNight ? '✨ Chúc bạn ngủ ngon ✨' : '☀️ Vui lên đi Thảo ☀️';
 const comboBarWrap = document.getElementById('combo-bar-wrap');
 const comboBar = document.getElementById('combo-bar');
 
