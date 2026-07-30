@@ -197,18 +197,18 @@
   #character {
     position: fixed;
     bottom: -10px;
-    right: 8vw;
-    width: 220px;
-    max-width: 32vw;
+    left: 0;
+    width: 880px;
+    max-width: 80vw;
     height: auto;
     transform: translateY(105%);
-    z-index: 4;
+    z-index: 100;
     pointer-events: none;
-    transition: transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1);
-    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.25));
+    transition: transform 0.85s cubic-bezier(0.34, 1.56, 0.64, 1);
+    filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.3));
   }
-  #character.peek { transform: translateY(45%); }
-  #character.retreating { transition: transform 0.22s cubic-bezier(0.55, 0, 0.1, 1); }
+  #character.peek { transform: translateY(35%); }
+  #character.retreating { transition: transform 0.28s cubic-bezier(0.55, 0, 0.1, 1); }
 </style>
 </head>
 <body>
@@ -1668,17 +1668,24 @@ draw();
 const character = document.getElementById('character');
 character.play().catch(() => {});
 function schedulePeek() {
-  const delay = 3000 + Math.random() * 2000; // 3–5s hidden
+  const hiddenMs = 5000; // 5s hidden between peeks
   setTimeout(() => {
+    // Random horizontal position each cycle
+    const charW = character.offsetWidth || 0;
+    const maxLeft = Math.max(0, window.innerWidth - charW);
+    character.style.left = (Math.random() * maxLeft) + 'px';
+
     character.classList.remove('retreating');
     character.classList.add('peek');
-    const holdMs = 500 + Math.random() * 700;
+
+    // Stay visible 5–8s while the video keeps looping
+    const visibleMs = 5000 + Math.random() * 3000;
     setTimeout(() => {
       character.classList.add('retreating');
       character.classList.remove('peek');
-      setTimeout(schedulePeek, 320);
-    }, 750 + holdMs); // 750ms emerge + hold
-  }, delay);
+      setTimeout(schedulePeek, 350);
+    }, visibleMs);
+  }, hiddenMs);
 }
 schedulePeek();
 </script>
