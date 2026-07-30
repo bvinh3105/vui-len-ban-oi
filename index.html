@@ -193,12 +193,29 @@
     touch-action: none;
   }
   #moon-hit:active { background: rgba(255, 245, 220, 0.08); }
+
+  #character {
+    position: fixed;
+    bottom: -10px;
+    right: 8vw;
+    width: 220px;
+    max-width: 32vw;
+    height: auto;
+    transform: translateY(105%);
+    z-index: 4;
+    pointer-events: none;
+    transition: transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1);
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.25));
+  }
+  #character.peek { transform: translateY(45%); }
+  #character.retreating { transition: transform 0.22s cubic-bezier(0.55, 0, 0.1, 1); }
 </style>
 </head>
 <body>
 
 <canvas id="canvas"></canvas>
 <canvas id="flowers"></canvas>
+<video id="character" src="character.webm" autoplay loop muted playsinline></video>
 <div id="moon-hit" aria-label="mặt trời"></div>
 <audio id="bgm" loop preload="auto" playsinline></audio>
 <button id="mute-btn" class="muted" aria-label="Bật/tắt nhạc">🔇</button>
@@ -1646,6 +1663,24 @@ if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', resize);
 }
 draw();
+
+// ============ CHARACTER PEEK — slow reveal, startled retreat ============
+const character = document.getElementById('character');
+character.play().catch(() => {});
+function schedulePeek() {
+  const delay = 3000 + Math.random() * 2000; // 3–5s hidden
+  setTimeout(() => {
+    character.classList.remove('retreating');
+    character.classList.add('peek');
+    const holdMs = 500 + Math.random() * 700;
+    setTimeout(() => {
+      character.classList.add('retreating');
+      character.classList.remove('peek');
+      setTimeout(schedulePeek, 320);
+    }, 750 + holdMs); // 750ms emerge + hold
+  }, delay);
+}
+schedulePeek();
 </script>
 </body>
 </html>
