@@ -225,7 +225,7 @@
 
 <canvas id="canvas"></canvas>
 <canvas id="flowers"></canvas>
-<img id="character" src="character.png" alt="">
+<video id="character" src="character.webm" autoplay loop muted playsinline></video>
 
 <canvas id="flames-canvas"></canvas>
 <div id="moon-hit" aria-label="mặt trời"></div>
@@ -1723,8 +1723,15 @@ draw();
 
 // ============ CHARACTER PEEK — random edge, slow reveal, startled retreat ============
 const character = document.getElementById('character');
+character.muted = true;
+const tryPlay = () => character.play().catch(() => {});
+tryPlay();
+['pointerdown', 'touchend', 'click', 'keydown'].forEach(evt =>
+  window.addEventListener(evt, tryPlay, { capture: true, passive: true })
+);
 
 function doPeek() {
+  tryPlay();
   const sides = ['bottom', 'top', 'left', 'right'];
   const side = sides[Math.floor(Math.random() * sides.length)];
   const vw = window.innerWidth, vh = window.innerHeight;
@@ -1738,25 +1745,25 @@ function doPeek() {
     s.left = (Math.random() * Math.max(0, vw - w)) + 'px';
     s.right = 'auto';
     hideT = 'translateY(105%) rotate(0deg)';
-    peekT = 'translateY(65%) rotate(0deg)';
+    peekT = 'translateY(45%) rotate(0deg)';
   } else if (side === 'top') {
     s.top = '-10px'; s.bottom = 'auto';
     s.left = (Math.random() * Math.max(0, vw - w)) + 'px';
     s.right = 'auto';
     hideT = 'translateY(-105%) rotate(180deg)';
-    peekT = 'translateY(-65%) rotate(180deg)';
+    peekT = 'translateY(-45%) rotate(180deg)';
   } else if (side === 'left') {
     s.top = (Math.random() * Math.max(0, vh - h)) + 'px'; s.bottom = 'auto';
     s.left = '0px'; s.right = 'auto';
     const hidePx = -Math.round((w + h) / 2 + 30);
-    const peekPx = Math.round(0.32 * h - (w + h) / 2);
+    const peekPx = Math.round(0.48 * h - (w + h) / 2);
     hideT = `translateX(${hidePx}px) rotate(90deg)`;
     peekT = `translateX(${peekPx}px) rotate(90deg)`;
   } else { // right
     s.top = (Math.random() * Math.max(0, vh - h)) + 'px'; s.bottom = 'auto';
     s.left = 'auto'; s.right = '0px';
     const hidePx = Math.round((w + h) / 2 + 30);
-    const peekPx = -Math.round(0.32 * h - (w + h) / 2);
+    const peekPx = -Math.round(0.48 * h - (w + h) / 2);
     hideT = `translateX(${hidePx}px) rotate(-90deg)`;
     peekT = `translateX(${peekPx}px) rotate(-90deg)`;
   }
@@ -1784,9 +1791,9 @@ function schedulePeek() {
   firstPeek = false;
   setTimeout(doPeek, hiddenMs);
 }
-// Wait for the image to be measurable before scheduling (offsetHeight is 0 until it loads)
-if (character.complete && character.naturalWidth > 0) schedulePeek();
-else character.addEventListener('load', schedulePeek, { once: true });
+// Wait for video metadata (need offsetHeight before positioning)
+if (character.readyState >= 1) schedulePeek();
+else character.addEventListener('loadedmetadata', schedulePeek, { once: true });
 </script>
 </body>
 </html>
