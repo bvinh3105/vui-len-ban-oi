@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Chúc bạn một ngày tốt lành</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    overscroll-behavior: none;
+    touch-action: none;
+    width: 100%;
+    height: 100%;
+    background: #a8dafc;
+  }
+
+  body {
+    background: radial-gradient(ellipse at 78% 22%, #fff3c8 0%, #ffe38a 12%, #bfe4fb 40%, #7cc2f0 100%);
+    background-color: #a8dafc;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+    cursor: default;
+  }
+
+  #canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    height: 100dvh;
+    pointer-events: none;
+    z-index: 0;
+    display: block;
+  }
+
+  #flowers {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 55vh;
+    height: 55dvh;
+    z-index: 5;
+    touch-action: none;
+    display: block;
+  }
+
+  .center {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+    margin-bottom: 26vh;
+    pointer-events: none; /* invisible padding around message won't block swipes */
+  }
+  .center > * { pointer-events: auto; }
+
+  .message {
+    font-size: clamp(1.7rem, 5.2vw, 3.1rem);
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow:
+      0 0 16px rgba(255, 180, 80, 0.85),
+      0 0 32px rgba(255, 130, 40, 0.5),
+      0 2px 8px rgba(140, 70, 20, 0.4);
+    letter-spacing: 0.06em;
+    line-height: 1.35;
+    animation: breathe 4s ease-in-out infinite;
+    user-select: none;
+    cursor: pointer;
+    padding: 12px 24px;
+    border-radius: 16px;
+    transition: transform 0.15s ease, text-shadow 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .message:hover {
+    text-shadow:
+      0 0 22px rgba(255, 210, 130, 0.95),
+      0 0 44px rgba(255, 160, 60, 0.6),
+      0 0 80px rgba(230, 120, 30, 0.4);
+  }
+
+  .message.active { transform: scale(0.96); }
+
+  @keyframes breathe {
+    0%, 100% { opacity: 0.92; }
+    50% { opacity: 1; }
+  }
+
+  #combo-bar-wrap {
+    width: 160px;
+    height: 4px;
+    background: rgba(0,0,0,0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  #combo-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #ffb84d, #ff5a3c);
+    border-radius: 4px;
+    transition: width 0.15s ease;
+  }
+
+  #combo-bar-wrap.visible { opacity: 1; }
+
+  .hint {
+    position: fixed;
+    bottom: 12px;
+    left: 0; right: 0;
+    text-align: center;
+    color: rgba(20, 45, 75, 0.55);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    z-index: 20;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  #mute-btn {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 30;
+    background: rgba(255,255,255,0.5);
+    color: rgba(60, 40, 20, 0.85);
+    border: 1px solid rgba(255,255,255,0.7);
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: background 0.2s, color 0.2s;
+    -webkit-tap-highlight-color: transparent;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1;
+    padding: 0;
+  }
+  #mute-btn:hover { background: rgba(255,255,255,0.75); color: #3a2810; }
+  #mute-btn.muted { color: rgba(60, 40, 20, 0.4); }
+
+  #moon-hit {
+    position: fixed;
+    z-index: 15;
+    cursor: pointer;
+    border-radius: 50%;
+    background: transparent;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
+  }
+  #moon-hit:active { background: rgba(255, 245, 220, 0.08); }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+<canvas id="flowers"></canvas>
+<div id="moon-hit" aria-label="mặt trời"></div>
+<audio id="bgm" src="lullaby.mp3" loop preload="auto" playsinline></audio>
+<button id="mute-btn" class="muted" aria-label="Bật/tắt nhạc">🔇</button>
+
+<div class="center">
+  <div class="message" id="btn">☀️ Chúc bạn một ngày tốt lành ☀️</div>
+  <div id="combo-bar-wrap"><div id="combo-bar"></div></div>
+</div>
+
+<div class="hint">lướt tay vào cánh đồng hoa tulip 🌷</div>
+
+<script>
+// ============ BACKGROUND MUSIC ============
+const bgm = document.getElementById('bgm');
+const muteBtn = document.getElementById('mute-btn');
+bgm.volume = 0.5;
+bgm.loop = true;
+let userPaused = false; // set true ONLY when user explicitly taps to pause
+
+function reflectPlaying() {
+  muteBtn.textContent = '🔊';
+  muteBtn.classList.remove('muted');
+}
+function reflectPaused() {
+  muteBtn.textContent = '🔇';
+  muteBtn.classList.add('muted');
+}
+
+// Sync UI with actual audio state
+bgm.addEventListener('play', reflectPlaying);
+bgm.addEventListener('playing', reflectPlaying);
+bgm.addEventListener('pause', reflectPaused);
+
+// iOS + most modern browsers require play() to run SYNCHRONOUSLY inside a user-gesture handler.
+// Attach a one-shot unlocker on the first real user interaction anywhere.
+function unlockAudio() {
+  if (userPaused) return;
+  const p = bgm.play();
+  if (p && typeof p.catch === 'function') p.catch(() => {});
+}
+const UNLOCK_EVENTS = ['pointerdown', 'touchend', 'click', 'keydown'];
+function attachUnlock() {
+  UNLOCK_EVENTS.forEach(evt =>
+    window.addEventListener(evt, unlockAudio, { capture: true, passive: true })
+  );
+}
+attachUnlock();
+// Try once on load in case the browser allows silent autoplay
+window.addEventListener('load', () => { bgm.play().catch(() => {}); });
+
+// Mute button — toggles based on ACTUAL audio state, not a shadow flag
+muteBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  if (bgm.paused) {
+    userPaused = false;
+    bgm.play().catch(() => {});
+  } else {
+    userPaused = true;
+    bgm.pause();
+  }
+});
+muteBtn.addEventListener('pointerdown', e => e.stopPropagation());
+
+// ============ STAR CANVAS ============
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const btn = document.getElementById('btn');
+const comboBarWrap = document.getElementById('combo-bar-wrap');
+const comboBar = document.getElementById('combo-bar');
+
+let W, H;
+function resize() {
+  // Cap DPR at 1.5 — on 3x phones this cuts pixel work by ~44% with negligible visual loss
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  resizeFlowers();
+  if (typeof positionMoonHit === 'function') positionMoonHit();
+}
+window.addEventListener('resize', resize);
+
+function randBetween(a, b) { return a + Math.random() * (b - a); }
+
+// Clouds — soft, drifting
+const clouds = [];
+const NUM_CLOUDS = 6;
+for (let i = 0; i < NUM_CLOUDS; i++) {
+  const puffCount = 4 + Math.floor(Math.random() * 3);
+  const puffs = [];
+  for (let j = 0; j < puffCount; j++) {
+    puffs.push({
+      dx: (Math.random() - 0.5) * 90,
+      dy: (Math.random() - 0.5) * 18,
+      r: 22 + Math.random() * 24,
+    });
+  }
+  clouds.push({
+    x: Math.random(),
+    y: 0.06 + Math.random() * 0.28,
+    scale: 0.7 + Math.random() * 1.1,
+    speed: 0.008 + Math.random() * 0.012,
+    alpha: 0.75 + Math.random() * 0.2,
+    puffs,
+  });
+}
+
+// Sun — bright, warm
+const moon = { x: 0.82, y: 0.2, r: 58 };
+
+// Combo
+let comboCount = 0, lastClickTime = 0, comboTimeout = null;
+let speedMult = 1;
+const COMBO_THRESHOLD = 10, COMBO_WINDOW = 600;
+
+function resetCombo() {
+  comboCount = 0; speedMult = 1;
+  updateComboBar();
+  comboBarWrap.classList.remove('visible');
+}
+function updateComboBar() {
+  const pct = Math.min(comboCount / COMBO_THRESHOLD, 1) * 100;
+  comboBar.style.width = pct + '%';
+}
+
+// Pointer events unify mouse + touch and don't hijack subsequent touches on other elements
+btn.addEventListener('pointerdown', e => {
+  handleClick();
+});
+
+function handleClick() {
+  btn.classList.add('active');
+  setTimeout(() => btn.classList.remove('active'), 120);
+  const now = Date.now();
+  if (now - lastClickTime < COMBO_WINDOW) comboCount = Math.min(comboCount + 1, COMBO_THRESHOLD);
+  else comboCount = 1;
+  lastClickTime = now;
+  speedMult = 1 + (comboCount / COMBO_THRESHOLD) * 5;
+  comboBarWrap.classList.add('visible');
+  updateComboBar();
+  if (comboCount >= COMBO_THRESHOLD) {
+    triggerFireflies();
+    comboCount = 0; updateComboBar(); speedMult = 1;
+    // Defensive: any stuck pointer state from rapid combo taps gets cleared
+    releasePointer();
+    setTimeout(() => comboBarWrap.classList.remove('visible'), 600);
+  }
+  clearTimeout(comboTimeout);
+  comboTimeout = setTimeout(resetCombo, COMBO_WINDOW * 2);
+}
+
+// Fireflies emitted from the flower field
+const fireflies = [];
+let fieldShakeUntil = 0;
+let fieldShakeWave = 0; // traveling wave center X (normalized 0..1)
+
+function triggerFireflies() {
+  // Shake the whole field: strong impulse + traveling ripple
+  for (const f of flowers) {
+    const dir = Math.random() < 0.5 ? -1 : 1;
+    f.vel += dir * randBetween(6, 14) * (0.5 + f.depth);
+  }
+  fieldShakeUntil = performance.now() + 1600;
+
+  // Emit a swarm of fireflies from random flowers
+  if (flowers.length === 0) return;
+  const count = 55 + Math.floor(Math.random() * 25);
+  const flowersBaseY = H - FH; // global y offset for flowers canvas
+
+  for (let i = 0; i < count; i++) {
+    const src = flowers[Math.floor(Math.random() * flowers.length)];
+    const hx = src.baseX + Math.sin(src.angle) * src.stemLen * 0.9;
+    const hy = src.baseY - Math.cos(src.angle) * src.stemLen * 0.9;
+    // Convert flower-canvas coords → main-canvas coords
+    const gx = hx + randBetween(-8, 8);
+    const gy = flowersBaseY + hy + randBetween(-6, 6);
+
+    // Warm firefly colors
+    const isGold = Math.random() < 0.75;
+    const color = isGold ? '255, 240, 140' : '190, 255, 150';
+
+    fireflies.push({
+      x: gx, y: gy,
+      vx: randBetween(-0.6, 0.6),
+      vy: randBetween(-1.8, -0.5),
+      wanderAngle: Math.random() * Math.PI * 2,
+      wanderSpeed: randBetween(0.4, 1.2),
+      blinkPhase: Math.random() * Math.PI * 2,
+      blinkSpeed: randBetween(2, 4.5),
+      life: randBetween(14, 24),
+      maxLife: 24,
+      size: randBetween(1.4, 2.8),
+      color,
+      turnRate: randBetween(0.5, 1.2),
+    });
+  }
+}
+
+function spawnFireflyAt(gx, gy, opts = {}) {
+  const isGold = Math.random() < 0.75;
+  const color = isGold ? '255, 240, 140' : '190, 255, 150';
+  fireflies.push({
+    x: gx, y: gy,
+    vx: opts.vx !== undefined ? opts.vx : randBetween(-0.6, 0.6),
+    vy: opts.vy !== undefined ? opts.vy : randBetween(-1.8, -0.5),
+    wanderAngle: Math.random() * Math.PI * 2,
+    wanderSpeed: randBetween(0.4, 1.2),
+    blinkPhase: Math.random() * Math.PI * 2,
+    blinkSpeed: randBetween(2, 4.5),
+    life: randBetween(14, 24),
+    maxLife: 24,
+    size: randBetween(1.4, 2.8),
+    color,
+    turnRate: randBetween(0.5, 1.2),
+  });
+}
+
+// Ripples for moon-tap visual feedback
+const ripples = [];
+function spawnRipple(x, y, color) {
+  ripples.push({ x, y, r: 0, maxR: 120, life: 1, color });
+}
+
+// Fireflies burst out from the moon in a soft radial pattern
+function spawnMoonFireflies() {
+  const mx = moon.x * W, my = moon.y * H;
+  spawnRipple(mx, my, '255, 245, 210');
+  const count = 25 + Math.floor(Math.random() * 15);
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = randBetween(1.2, 3);
+    // Start slightly inside moon
+    const startR = moon.r * (0.3 + Math.random() * 0.6);
+    spawnFireflyAt(
+      mx + Math.cos(angle) * startR,
+      my + Math.sin(angle) * startR,
+      {
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - randBetween(0, 0.6),
+      }
+    );
+  }
+}
+
+// Shake makes the flower field rustle — random impulses + ripple wave
+function rustleFlowers(intensity = 1) {
+  for (const f of flowers) {
+    const dir = Math.random() < 0.5 ? -1 : 1;
+    f.vel += dir * randBetween(4, 10) * intensity * (0.4 + f.depth);
+  }
+  fieldShakeUntil = Math.max(fieldShakeUntil, performance.now() + 900 + 500 * intensity);
+}
+
+function updateFireflies(dt) {
+  for (let i = fireflies.length - 1; i >= 0; i--) {
+    const f = fireflies[i];
+    // Wander behavior — smooth random direction change
+    f.wanderAngle += randBetween(-1, 1) * f.turnRate * dt * 4;
+    f.vx += Math.cos(f.wanderAngle) * 0.08 * f.wanderSpeed;
+    f.vy += Math.sin(f.wanderAngle) * 0.08 * f.wanderSpeed;
+    // Gentle upward drift
+    f.vy -= 0.008;
+    // Damping
+    f.vx *= 0.96; f.vy *= 0.96;
+    // Move
+    f.x += f.vx * dt * 60;
+    f.y += f.vy * dt * 60;
+    // Blink
+    f.blinkPhase += f.blinkSpeed * dt;
+    f.life -= dt;
+    if (f.life <= 0 || f.y < -60 || f.x < -60 || f.x > W + 60) fireflies.splice(i, 1);
+  }
+}
+
+// Pre-rendered glow sprites — createRadialGradient every frame is expensive on mobile
+const fireflySprites = {};
+function makeFireflySprite(color) {
+  const size = 96;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const cx = c.getContext('2d');
+  const g = cx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0, `rgba(${color}, 0.6)`);
+  g.addColorStop(0.3, `rgba(${color}, 0.25)`);
+  g.addColorStop(1, `rgba(${color}, 0)`);
+  cx.fillStyle = g;
+  cx.fillRect(0, 0, size, size);
+  return c;
+}
+function getFireflySprite(color) {
+  if (!fireflySprites[color]) fireflySprites[color] = makeFireflySprite(color);
+  return fireflySprites[color];
+}
+
+function drawFireflies() {
+  if (fireflies.length === 0) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const f of fireflies) {
+    const fadeIn = Math.min(1, (f.maxLife - f.life) / 0.8);
+    const fadeOut = Math.min(1, f.life / 3);
+    const alpha = Math.max(0, Math.min(fadeIn, fadeOut));
+    const blink = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(f.blinkPhase));
+    const a = alpha * blink;
+
+    // Wide soft glow — use cached sprite instead of building gradient per frame
+    const glowR = f.size * 10;
+    const sprite = getFireflySprite(f.color);
+    ctx.globalAlpha = a;
+    ctx.drawImage(sprite, f.x - glowR, f.y - glowR, glowR * 2, glowR * 2);
+
+    // Bright warm core
+    ctx.globalAlpha = a;
+    ctx.fillStyle = 'rgba(255, 250, 210, 1)';
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.size * 0.9, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+// ============ BUTTERFLIES — occasional cameo ============
+const butterflies = [];
+let nextButterflyAt = performance.now() + 1500 + Math.random() * 3000;
+const BUTTERFLY_PALETTE = [
+  { wing: '#ffcce0', accent: '#ff8fb1' }, // pink
+  { wing: '#fff2a8', accent: '#ffc94a' }, // yellow
+  { wing: '#bde0ff', accent: '#7fb8f0' }, // sky blue
+  { wing: '#e0c9ff', accent: '#a884e0' }, // lavender
+  { wing: '#ffe0c2', accent: '#ff9d55' }, // peach
+  { wing: '#ffffff', accent: '#cfcfcf' }, // white
+  { wing: '#ff9ec7', accent: '#c94e88' }, // magenta rose
+  { wing: '#a8e6d0', accent: '#4fb894' }, // mint
+  { wing: '#ffb891', accent: '#e05c2a' }, // coral orange
+  { wing: '#c9a0ff', accent: '#7f4dd0' }, // violet
+  { wing: '#ffec5c', accent: '#e8a800' }, // canary
+  { wing: '#a2d2ff', accent: '#4d90d9' }, // cornflower
+  { wing: '#ffd6ec', accent: '#e090bf' }, // baby pink
+  { wing: '#d4f0a0', accent: '#84c04d' }, // pistachio
+];
+
+// States: 'crossing' (traversing screen), 'seeking' (flying to a landing target),
+// 'resting' (landed, wings slow-flap), 'startled' (fleeing from a touch)
+function spawnButterfly() {
+  const fromLeft = Math.random() < 0.5;
+  const dir = fromLeft ? 1 : -1;
+  const startX = fromLeft ? -60 : W + 60;
+  const startY = randBetween(H * 0.18, H * 0.55);
+  butterflies.push({
+    x: startX, y: startY, baseY: startY,
+    vx: dir * randBetween(0.5, 0.9),
+    vy: 0,
+    dir,
+    state: 'crossing',
+    stateUntil: 0,
+    targetX: 0, targetY: 0, targetKind: null, targetRef: null,
+    bobPhase: Math.random() * Math.PI * 2,
+    bobSpeed: randBetween(1.6, 2.4),
+    bobAmp: randBetween(10, 22),
+    driftPhase: Math.random() * Math.PI * 2,
+    driftSpeed: randBetween(0.25, 0.55),
+    flapPhase: Math.random() * Math.PI * 2,
+    flapSpeed: randBetween(11, 16),
+    color: BUTTERFLY_PALETTE[Math.floor(Math.random() * BUTTERFLY_PALETTE.length)],
+    size: randBetween(10, 15),
+    life: 90,
+    nextConsiderAt: performance.now() + 3000 + Math.random() * 4000,
+  });
+}
+
+function pickLandingTarget(b) {
+  // 55% chance land on a flower, 45% chance on the text
+  if (Math.random() < 0.55 && flowers.length > 0) {
+    // Prefer nearby flowers to make trajectory feel natural
+    const nearby = flowers.filter(f => Math.abs(f.baseX - b.x) < W * 0.35 && f.depth > 0.3);
+    const pool = nearby.length > 5 ? nearby : flowers;
+    const f = pool[Math.floor(Math.random() * pool.length)];
+    const flowersBaseY = H - FH;
+    b.targetX = f.baseX;
+    b.targetY = flowersBaseY + f.baseY - f.stemLen + f.headH * 0.3;
+    b.targetKind = 'flower';
+    b.targetRef = f;
+  } else {
+    const rect = btn.getBoundingClientRect();
+    b.targetX = rect.left + rect.width * (0.15 + Math.random() * 0.7);
+    b.targetY = rect.top + rect.height * (0.1 + Math.random() * 0.3);
+    b.targetKind = 'text';
+    b.targetRef = null;
+  }
+}
+
+function updateButterflies(dt) {
+  const now = performance.now();
+  if (now >= nextButterflyAt && butterflies.length < 6) {
+    spawnButterfly();
+    nextButterflyAt = now + 3500 + Math.random() * 6500;
+  }
+
+  for (let i = butterflies.length - 1; i >= 0; i--) {
+    const b = butterflies[i];
+
+    // Startle if pointer active nearby (any state)
+    if (pointer.active && b.state !== 'startled') {
+      const flowersBaseY = H - FH;
+      const px = pointer.x;
+      const py = pointer.y + flowersBaseY;
+      const dx = b.x - px, dy = b.y - py;
+      if (dx * dx + dy * dy < 55 * 55) {
+        startleButterfly(b, px, py);
+      }
+    }
+
+    b.flapPhase += b.flapSpeed * dt;
+
+    if (b.state === 'crossing') {
+      // Standard traverse behavior
+      b.bobPhase += b.bobSpeed * dt;
+      b.driftPhase += b.driftSpeed * dt;
+      b.baseY += Math.sin(b.driftPhase) * dt * 6;
+      b.baseY = Math.max(H * 0.12, Math.min(H * 0.62, b.baseY));
+      const tY = b.baseY + Math.sin(b.bobPhase) * b.bobAmp;
+      b.vy += (tY - b.y) * dt * 4;
+      b.vy *= 0.88;
+      b.y += b.vy * dt * 60;
+      b.vx = b.dir * 0.65 + Math.sin(b.driftPhase * 1.7) * 0.15 * b.dir;
+      b.x += b.vx * dt * 60;
+
+      // Occasionally decide to land
+      if (now >= b.nextConsiderAt && b.x > W * 0.15 && b.x < W * 0.85) {
+        b.nextConsiderAt = now + 4000 + Math.random() * 4000;
+        if (Math.random() < 0.45) {
+          pickLandingTarget(b);
+          b.state = 'seeking';
+        }
+      }
+    } else if (b.state === 'seeking') {
+      // Home in on target
+      const dx = b.targetX - b.x, dy = b.targetY - b.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 8) {
+        b.state = 'resting';
+        b.stateUntil = now + 2500 + Math.random() * 4500;
+        b.vx = 0; b.vy = 0;
+        b.flapSpeed = 3.5; // slow wing pulse while resting
+        b.x = b.targetX;
+        b.y = b.targetY;
+      } else {
+        const ax = (dx / dist) * 0.35 + Math.sin(b.driftPhase * 3) * 0.08;
+        const ay = (dy / dist) * 0.35 + Math.sin(b.driftPhase * 4) * 0.08;
+        b.vx += ax; b.vy += ay;
+        // Cap speed so it doesn't rocket
+        const sp = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+        const MAX = 3.2;
+        if (sp > MAX) { b.vx = b.vx / sp * MAX; b.vy = b.vy / sp * MAX; }
+        b.vx *= 0.94; b.vy *= 0.94;
+        b.x += b.vx * dt * 60;
+        b.y += b.vy * dt * 60;
+        b.driftPhase += dt * 3;
+        b.dir = b.vx >= 0 ? 1 : -1;
+      }
+    } else if (b.state === 'resting') {
+      // Sway slightly with flower if landed on one
+      if (b.targetKind === 'flower' && b.targetRef) {
+        const f = b.targetRef;
+        const flowersBaseY = H - FH;
+        b.x = f.baseX + Math.sin(f.angle) * f.stemLen;
+        b.y = flowersBaseY + f.baseY - Math.cos(f.angle) * f.stemLen + f.headH * 0.3;
+      }
+      // Occasional tiny wing pulse
+      if (Math.random() < 0.01) b.flapSpeed = randBetween(6, 10);
+      else if (b.flapSpeed > 4) b.flapSpeed *= 0.96;
+      if (now >= b.stateUntil) {
+        // Take off in a random direction
+        b.state = 'crossing';
+        b.dir = Math.random() < 0.5 ? -1 : 1;
+        b.baseY = Math.max(H * 0.15, b.y - randBetween(20, 60));
+        b.flapSpeed = randBetween(11, 16);
+        b.vy = -1;
+        b.nextConsiderAt = now + 8000 + Math.random() * 6000;
+      }
+    } else if (b.state === 'startled') {
+      // Crossing-like but faster wings, faster forward flight, wider bob — no snaps
+      b.bobPhase += b.bobSpeed * dt * 1.3;
+      b.driftPhase += b.driftSpeed * dt * 1.4;
+      const tY = b.baseY + Math.sin(b.bobPhase) * b.bobAmp;
+      b.vy += (tY - b.y) * dt * 5;
+      b.vy *= 0.9;
+      b.y += b.vy * dt * 60;
+      b.vx = b.dir * 1.5 + Math.sin(b.driftPhase * 1.7) * 0.25 * b.dir;
+      b.x += b.vx * dt * 60;
+
+      if (now >= b.stateUntil) {
+        b.state = 'crossing';
+        b.flapSpeed = randBetween(11, 16);
+        b.bobAmp = randBetween(10, 22); // return to calm bobbing
+        b.nextConsiderAt = now + 5000 + Math.random() * 5000;
+      }
+    }
+
+    b.life -= dt;
+    if (b.x < -120 || b.x > W + 120 || b.y < -80 || b.y > H + 80 || b.life <= 0) {
+      butterflies.splice(i, 1);
+    }
+  }
+}
+
+function drawButterfly(b) {
+  const flap = Math.sin(b.flapPhase);
+  const wingScale = 0.35 + 0.65 * (Math.abs(flap) * 0.5 + 0.5); // 0.35 (closed) → 1.0 (open)
+
+  ctx.save();
+  ctx.translate(b.x, b.y);
+  ctx.scale(b.dir, 1); // face the direction of travel
+  // Slight tilt with vertical velocity for liveliness
+  ctx.rotate(b.vy * 0.03);
+
+  const s = b.size;
+  const wc = b.color.wing;
+  const ac = b.color.accent;
+
+  for (const side of [-1, 1]) {
+    ctx.save();
+    ctx.scale(side, 1);
+    ctx.scale(wingScale, 1);
+
+    // Upper wing
+    ctx.fillStyle = wc;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.bezierCurveTo(s * 0.35, -s * 0.95, s * 1.15, -s * 0.75, s * 1.1, -s * 0.1);
+    ctx.bezierCurveTo(s * 0.85, s * 0.05, s * 0.45, s * 0.05, 0, 0);
+    ctx.closePath();
+    ctx.fill();
+
+    // Lower wing
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.bezierCurveTo(s * 0.2, s * 0.4, s * 0.85, s * 0.75, s * 0.55, s * 0.9);
+    ctx.bezierCurveTo(s * 0.25, s * 0.95, s * 0.05, s * 0.5, 0, 0);
+    ctx.closePath();
+    ctx.fill();
+
+    // Accent dot on upper wing
+    ctx.fillStyle = ac;
+    ctx.beginPath();
+    ctx.arc(s * 0.65, -s * 0.45, s * 0.13, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Body
+  ctx.fillStyle = 'rgba(35, 25, 45, 0.9)';
+  ctx.beginPath();
+  ctx.ellipse(0, 0, s * 0.09, s * 0.38, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Tiny head
+  ctx.beginPath();
+  ctx.arc(0, -s * 0.4, s * 0.08, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawButterflies() {
+  for (const b of butterflies) drawButterfly(b);
+}
+
+function updateRipples(dt) {
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    const r = ripples[i];
+    r.r += (r.maxR - r.r) * dt * 3;
+    r.life -= dt * 1.2;
+    if (r.life <= 0) ripples.splice(i, 1);
+  }
+}
+
+function drawRipples() {
+  for (const r of ripples) {
+    ctx.strokeStyle = `rgba(${r.color}, ${r.life * 0.5})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
+
+// ============ HIDDEN EASTER-EGG MODE: tap moon or shake phone → fireflies ============
+const moonHit = document.getElementById('moon-hit');
+function positionMoonHit() {
+  const mx = moon.x * W, my = moon.y * H;
+  const hitR = moon.r * 2.2; // generous tap zone (glow area)
+  moonHit.style.left = (mx - hitR) + 'px';
+  moonHit.style.top = (my - hitR) + 'px';
+  moonHit.style.width = (hitR * 2) + 'px';
+  moonHit.style.height = (hitR * 2) + 'px';
+}
+moonHit.addEventListener('pointerdown', e => {
+  e.stopPropagation();
+  spawnMoonFireflies();
+});
+
+// Startle: no jump/fling — just fast wings + head away in current altitude
+function startleButterfly(b, fromX, fromY) {
+  if (b.state === 'startled') return;
+  b.state = 'startled';
+  b.stateUntil = performance.now() + 1500;
+  // Face away from touch — direction change only, no positional teleport
+  b.dir = fromX < b.x ? 1 : -1;
+  // Wings flap faster like a panicked butterfly
+  b.flapSpeed = 22 + Math.random() * 4;
+  // Widen bobbing amplitude briefly — makes flight look agitated
+  b.bobAmp = Math.min(b.bobAmp * 1.6, 40);
+  // Keep current baseY, current y, current velocity — no snapping
+}
+
+// Tap or swipe near a butterfly → startle it. Global listener.
+window.addEventListener('pointerdown', e => {
+  const R = 50;
+  for (const b of butterflies) {
+    const dx = b.x - e.clientX, dy = b.y - e.clientY;
+    if (dx * dx + dy * dy < R * R) startleButterfly(b, e.clientX, e.clientY);
+  }
+});
+window.addEventListener('pointermove', e => {
+  const R = 35;
+  for (const b of butterflies) {
+    if (b.state !== 'resting') continue;
+    const dx = b.x - e.clientX, dy = b.y - e.clientY;
+    if (dx * dx + dy * dy < R * R) startleButterfly(b, e.clientX, e.clientY);
+  }
+}, { passive: true });
+
+// Shake detection via DeviceMotion
+let lastAccel = { x: 0, y: 0, z: 0, t: 0 };
+let shakeEnergy = 0;
+let lastShakeAt = 0;
+function handleDeviceMotion(e) {
+  const acc = e.accelerationIncludingGravity || e.acceleration;
+  if (!acc || acc.x === null) return;
+  const now = performance.now();
+  const dt = Math.max(now - lastAccel.t, 8);
+  const dx = (acc.x || 0) - lastAccel.x;
+  const dy = (acc.y || 0) - lastAccel.y;
+  const dz = (acc.z || 0) - lastAccel.z;
+  const jerk = Math.sqrt(dx * dx + dy * dy + dz * dz) / dt * 1000;
+  lastAccel = { x: acc.x || 0, y: acc.y || 0, z: acc.z || 0, t: now };
+
+  // Smooth accumulator; only trigger on genuine shakes, not tilts
+  shakeEnergy = shakeEnergy * 0.85 + jerk * 0.15;
+  if (shakeEnergy > 40 && now - lastShakeAt > 400) {
+    lastShakeAt = now;
+    // Scale rustle intensity with shake strength (soft → strong shake)
+    const intensity = Math.min(1.6, (shakeEnergy - 40) / 60 + 0.6);
+    rustleFlowers(intensity);
+    shakeEnergy *= 0.4;
+  }
+}
+
+async function requestMotionPermission() {
+  if (typeof DeviceMotionEvent === 'undefined') return;
+  // iOS 13+ requires explicit permission via a user gesture
+  if (typeof DeviceMotionEvent.requestPermission === 'function') {
+    try {
+      const state = await DeviceMotionEvent.requestPermission();
+      if (state === 'granted') {
+        window.addEventListener('devicemotion', handleDeviceMotion);
+      }
+    } catch (e) { /* silently ignore */ }
+  } else {
+    // Android / non-iOS — no permission needed
+    window.addEventListener('devicemotion', handleDeviceMotion);
+  }
+}
+// Attach on first user gesture (required for iOS permission prompt)
+window.addEventListener('pointerdown', requestMotionPermission, { once: true });
+
+// Apply ongoing traveling-ripple shake to flowers between clicks
+function applyFieldShake(dt) {
+  if (performance.now() > fieldShakeUntil) return;
+  const now = performance.now();
+  const remaining = (fieldShakeUntil - now) / 1600; // 1..0
+  fieldShakeWave += dt * 2.5;
+  for (const f of flowers) {
+    // Traveling sine ripple across the field
+    const phase = (f.baseX / FW) * Math.PI * 4 - fieldShakeWave * Math.PI * 2;
+    f.vel += Math.sin(phase) * 0.6 * remaining * (0.4 + f.depth);
+  }
+}
+
+// ============ FLOWERS ============
+const flowersCanvas = document.getElementById('flowers');
+const fctx = flowersCanvas.getContext('2d');
+let FW, FH;
+
+function resizeFlowers() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  const rect = flowersCanvas.getBoundingClientRect();
+  FW = Math.max(rect.width, window.innerWidth);
+  FH = Math.max(rect.height, window.innerHeight * 0.55);
+  flowersCanvas.width = FW * dpr; flowersCanvas.height = FH * dpr;
+  flowersCanvas.style.width = FW + 'px';
+  flowersCanvas.style.height = FH + 'px';
+  fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  buildFlowers();
+}
+
+const flowers = [];
+const petals = [];
+
+function buildFlowers() {
+  flowers.length = 0;
+  const density = Math.max(120, Math.floor(FW / 8));
+  const bucketW = FW / density;
+  const palette = [
+    { main: '#e63b5e', dark: '#a01a3a', light: '#ff7a95' },
+    { main: '#ff8fb1', dark: '#c25378', light: '#ffc4d6' },
+    { main: '#ffd93d', dark: '#c99a1a', light: '#ffe98a' },
+    { main: '#b76bff', dark: '#7a3ac0', light: '#d9a8ff' },
+    { main: '#ff9955', dark: '#c26326', light: '#ffbe8a' },
+    { main: '#f8f0ff', dark: '#c9b8d9', light: '#ffffff' },
+    { main: '#ff4d6d', dark: '#a41e3d', light: '#ff8fa8' },
+    { main: '#ff5a3c', dark: '#a02818', light: '#ff8f7a' },
+    { main: '#c8a2ff', dark: '#8a5fc8', light: '#e0c9ff' },
+  ];
+  for (let i = 0; i < density; i++) {
+    // 3 depth bands so field feels layered and full
+    const band = Math.floor(Math.random() * 3);
+    const bandDepth = band / 2;
+    const jitter = Math.random() * 0.33;
+    const depth = Math.min(1, bandDepth + jitter);
+
+    // Stratified sampling — one flower per bucket, jittered — no random gaps
+    const x = i * bucketW + Math.random() * bucketW * 1.3 - bucketW * 0.15;
+    const baseY = FH * (0.32 + depth * 0.62);
+    const stemLen = randBetween(45, 120) * (0.5 + depth * 0.75);
+    const headH = randBetween(16, 30) * (0.5 + depth * 0.75);
+    const headW = headH * randBetween(0.65, 0.85);
+    const col = palette[Math.floor(Math.random() * palette.length)];
+    flowers.push({
+      baseX: x, baseY,
+      stemLen, headW, headH,
+      angle: randBetween(-0.05, 0.05),
+      vel: 0,
+      depth,
+      color: col,
+      swayPhase: Math.random() * Math.PI * 2,
+      stemW: 1.2 + depth * 1.6,
+      hasLeaf: Math.random() < 0.75,
+      leafSide: Math.random() < 0.5 ? -1 : 1,
+    });
+  }
+  flowers.sort((a, b) => a.depth - b.depth);
+}
+
+// Pointer tracking + trail
+let pointer = { x: -9999, y: -9999, prevX: -9999, prevY: -9999, vx: 0, vy: 0, active: false, lastMove: 0, speed: 0 };
+const trail = [];
+
+function updatePointer(clientX, clientY) {
+  const rect = flowersCanvas.getBoundingClientRect();
+  const nx = clientX - rect.left;
+  const ny = clientY - rect.top;
+  if (pointer.active) {
+    pointer.vx = nx - pointer.x;
+    pointer.vy = ny - pointer.y;
+    pointer.speed = Math.sqrt(pointer.vx * pointer.vx + pointer.vy * pointer.vy);
+  }
+  pointer.prevX = pointer.x; pointer.prevY = pointer.y;
+  pointer.x = nx; pointer.y = ny;
+  pointer.active = true;
+  pointer.lastMove = performance.now();
+  trail.push({ x: nx, y: ny, life: 0.5, size: 6 + Math.min(pointer.speed * 0.3, 14) });
+  if (trail.length > 30) trail.shift();
+}
+
+function releasePointer() {
+  pointer.active = false;
+  pointer.vx = 0; pointer.vy = 0; pointer.speed = 0;
+}
+
+// Global pointer listeners — always active, decide per-event whether the touch is in the flowers zone.
+// This avoids touch-capture issues where tapping the message would block later touches on the canvas.
+function pointerInFlowersZone(clientY) {
+  const rect = flowersCanvas.getBoundingClientRect();
+  return clientY >= rect.top && clientY <= rect.bottom;
+}
+
+window.addEventListener('pointermove', e => {
+  if (!pointerInFlowersZone(e.clientY)) return;
+  updatePointer(e.clientX, e.clientY);
+}, { passive: true });
+
+window.addEventListener('pointerdown', e => {
+  if (!pointerInFlowersZone(e.clientY)) return;
+  updatePointer(e.clientX, e.clientY);
+}, { passive: true });
+
+window.addEventListener('pointerup', releasePointer, { passive: true });
+window.addEventListener('pointercancel', releasePointer, { passive: true });
+window.addEventListener('pointerleave', releasePointer, { passive: true });
+
+function updateFlowers(dt) {
+  const now = performance.now();
+  const nowSec = now * 0.001;
+  if (now - pointer.lastMove > 40) {
+    pointer.vx *= 0.85; pointer.vy *= 0.85;
+    pointer.speed *= 0.85;
+  }
+
+  // Global wind — gentle, layered slow oscillations
+  const windBase = Math.sin(nowSec * 0.55) * 0.28 + Math.sin(nowSec * 0.23 + 1.3) * 0.15;
+  // Gust envelope — rare, mild gusts
+  const gustSeed = Math.sin(nowSec * 0.13) * Math.sin(nowSec * 0.31 + 0.7);
+  const gustEnv = Math.max(0, gustSeed - 0.35) * 1.8;
+
+  for (const f of flowers) {
+    // Head position based on current angle
+    const hx = f.baseX + Math.sin(f.angle) * f.stemLen;
+    const hy = f.baseY - Math.cos(f.angle) * f.stemLen;
+
+    // Whole-stem influence: also test midpoint so lower part reacts too
+    const mx = f.baseX + Math.sin(f.angle * 0.5) * f.stemLen * 0.55;
+    const my = f.baseY - Math.cos(f.angle * 0.5) * f.stemLen * 0.55;
+
+    // Per-flower wind — wave travels left→right so field ripples instead of moving in unison
+    const posPhase = (f.baseX / FW) * Math.PI * 2;
+    const localSway = Math.sin(nowSec * 1.05 + f.swayPhase - posPhase * 0.4) * 0.22;
+    const gust = Math.sin(nowSec * 1.6 - posPhase * 0.7) * gustEnv * (0.5 + f.depth * 0.5);
+    const wind = (windBase + localSway + gust) * (0.3 + f.depth * 0.6);
+
+    // Spring toward upright + wind
+    let force = -f.angle * 7 + wind;
+
+    if (pointer.active) {
+      // Nearest of head or midpoint
+      const dxH = hx - pointer.x, dyH = hy - pointer.y;
+      const dxM = mx - pointer.x, dyM = my - pointer.y;
+      const distH = Math.sqrt(dxH * dxH + dyH * dyH);
+      const distM = Math.sqrt(dxM * dxM + dyM * dyM);
+      const useHead = distH <= distM;
+      const dx = useHead ? dxH : dxM;
+      const dy = useHead ? dyH : dyM;
+      const dist = useHead ? distH : distM;
+
+      const R = 130;
+      if (dist < R) {
+        const strength = Math.pow(1 - dist / R, 1.5);
+
+        // Direction to push flower AWAY from finger (horizontal component)
+        const dirSign = dx === 0 ? (Math.random() < 0.5 ? -1 : 1) : Math.sign(dx);
+
+        // Direct proximity push — feels like the finger is nudging the flower
+        const proximityPush = dirSign * strength * 1.4;
+
+        // Velocity contribution — swiping drags flowers along
+        const velocityPush = pointer.vx * 0.06 * strength;
+
+        force += proximityPush + velocityPush;
+
+        // Petal shedding: easier to trigger, more per touch
+        if (pointer.speed > 5 && Math.random() < 0.18 * strength) {
+          spawnPetal(hx, hy, f.color.main, pointer.vx * 0.5, pointer.vy * 0.5);
+        }
+        // Also shed just from contact on close touch
+        if (strength > 0.85 && Math.random() < 0.03) {
+          spawnPetal(hx, hy, f.color.light, randBetween(-2, 2), randBetween(-3, -1));
+        }
+      }
+    }
+
+    f.vel += force * dt * 60;
+    f.vel *= Math.pow(0.015, dt); // slightly less damping so movement feels alive
+    f.angle += f.vel * dt;
+    // Clamp so stem doesn't fold
+    if (f.angle > 1.3) { f.angle = 1.3; f.vel *= -0.25; }
+    if (f.angle < -1.3) { f.angle = -1.3; f.vel *= -0.25; }
+  }
+
+  // Trail decay
+  for (let i = trail.length - 1; i >= 0; i--) {
+    trail[i].life -= dt;
+    if (trail[i].life <= 0) trail.splice(i, 1);
+  }
+
+  // Petals
+  for (let i = petals.length - 1; i >= 0; i--) {
+    const p = petals[i];
+    p.x += p.vx * dt * 60;
+    p.y += p.vy * dt * 60;
+    p.vy += 0.15 * dt * 60;
+    p.vx *= 0.99;
+    p.rot += p.vr * dt;
+    p.life -= dt;
+    if (p.life <= 0 || p.y > FH + 20) petals.splice(i, 1);
+  }
+}
+
+// Pre-rendered trail/touch glow sprite — same one reused for all trail dots + current touch
+let trailSprite = null;
+function getTrailSprite() {
+  if (trailSprite) return trailSprite;
+  const size = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const cx = c.getContext('2d');
+  const g = cx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0, 'rgba(255, 220, 255, 0.7)');
+  g.addColorStop(0.4, 'rgba(200, 160, 255, 0.25)');
+  g.addColorStop(1, 'rgba(200, 160, 255, 0)');
+  cx.fillStyle = g;
+  cx.fillRect(0, 0, size, size);
+  trailSprite = c;
+  return c;
+}
+
+function drawTouchGlow() {
+  const sprite = getTrailSprite();
+  // Trail — one drawImage per dot instead of building a gradient each time
+  for (const t of trail) {
+    const a = t.life / 0.5;
+    const r = t.size * a * 2;
+    fctx.globalAlpha = 0.5 * a;
+    fctx.drawImage(sprite, t.x - r, t.y - r, r * 2, r * 2);
+  }
+  // Current touch glow
+  if (pointer.active && performance.now() - pointer.lastMove < 300) {
+    const R = 55;
+    fctx.globalAlpha = 0.5;
+    fctx.drawImage(sprite, pointer.x - R, pointer.y - R, R * 2, R * 2);
+  }
+  fctx.globalAlpha = 1;
+}
+
+function spawnPetal(x, y, color, pvx, pvy) {
+  petals.push({
+    x, y,
+    vx: pvx * 0.15 + randBetween(-1.5, 1.5),
+    vy: pvy * 0.15 + randBetween(-3, -0.5),
+    rot: Math.random() * Math.PI * 2,
+    vr: randBetween(-4, 4),
+    size: randBetween(4, 7),
+    color,
+    life: randBetween(2, 3.5),
+    maxLife: 3.5,
+  });
+}
+
+function drawGrass() {
+  // Grass gradient — sunlit meadow
+  const grad = fctx.createLinearGradient(0, FH * 0.5, 0, FH);
+  grad.addColorStop(0, 'rgba(140, 210, 130, 0)');
+  grad.addColorStop(0.4, 'rgba(100, 180, 100, 0.4)');
+  grad.addColorStop(1, 'rgba(55, 140, 70, 0.9)');
+  fctx.fillStyle = grad;
+  fctx.fillRect(0, 0, FW, FH);
+
+  // Grass blades — deeper green foreground
+  fctx.fillStyle = 'rgba(30, 100, 50, 0.75)';
+  fctx.beginPath();
+  fctx.moveTo(0, FH);
+  const step = 8;
+  for (let x = 0; x <= FW; x += step) {
+    const y = FH - 20 - Math.sin(x * 0.05) * 6 - Math.sin(x * 0.13 + 1.7) * 4;
+    fctx.lineTo(x, y);
+  }
+  fctx.lineTo(FW, FH);
+  fctx.closePath();
+  fctx.fill();
+}
+
+// Pre-render tulip heads once per color as offscreen sprites — massive perf win vs redrawing
+// 3 bezier fills + shadowBlur × 120 flowers × 60fps
+const TULIP_REF_H = 100;
+const TULIP_REF_W = TULIP_REF_H * 0.75;
+const TULIP_SPRITE_SCALE = 2; // supersample for sharpness when scaled down
+const tulipSpriteCache = new Map();
+
+function buildTulipHeadPath(cx, w, h) {
+  // Back petal
+  cx.beginPath();
+  cx.moveTo(0, 0);
+  cx.bezierCurveTo(-w * 0.35, -h * 0.4, -w * 0.28, -h * 1.05, 0, -h * 1.1);
+  cx.bezierCurveTo(w * 0.28, -h * 1.05, w * 0.35, -h * 0.4, 0, 0);
+  cx.closePath();
+}
+
+function makeTulipSprite(color) {
+  const w = TULIP_REF_W, h = TULIP_REF_H;
+  const padX = 14, padTop = 12, padBot = 4;
+  const cw = (w * 2 + padX * 2) * TULIP_SPRITE_SCALE;
+  const ch = (h * 1.1 + padTop + padBot) * TULIP_SPRITE_SCALE;
+  const c = document.createElement('canvas');
+  c.width = cw; c.height = ch;
+  const cx = c.getContext('2d');
+  cx.scale(TULIP_SPRITE_SCALE, TULIP_SPRITE_SCALE);
+  cx.translate(cw / (2 * TULIP_SPRITE_SCALE), ch / TULIP_SPRITE_SCALE - padBot);
+
+  // Soft glow behind (baked in — avoids per-frame shadowBlur)
+  cx.save();
+  cx.globalAlpha = 0.35;
+  cx.filter = 'blur(6px)';
+  cx.fillStyle = color.main;
+  buildTulipHeadPath(cx, w * 1.05, h * 1.05);
+  cx.fill();
+  cx.restore();
+
+  // Back petal
+  cx.fillStyle = color.dark;
+  buildTulipHeadPath(cx, w, h);
+  cx.fill();
+
+  // Left front petal
+  cx.fillStyle = color.main;
+  cx.beginPath();
+  cx.moveTo(0, -h * 0.05);
+  cx.bezierCurveTo(-w * 0.95, -h * 0.35, -w * 0.75, -h * 1.0, -w * 0.15, -h * 0.95);
+  cx.bezierCurveTo(-w * 0.05, -h * 0.7, -w * 0.05, -h * 0.35, 0, -h * 0.05);
+  cx.closePath();
+  cx.fill();
+
+  // Right front petal
+  cx.beginPath();
+  cx.moveTo(0, -h * 0.05);
+  cx.bezierCurveTo(w * 0.95, -h * 0.35, w * 0.75, -h * 1.0, w * 0.15, -h * 0.95);
+  cx.bezierCurveTo(w * 0.05, -h * 0.7, w * 0.05, -h * 0.35, 0, -h * 0.05);
+  cx.closePath();
+  cx.fill();
+
+  // Highlight on left petal
+  cx.fillStyle = color.light;
+  cx.globalAlpha = 0.5;
+  cx.beginPath();
+  cx.ellipse(-w * 0.4, -h * 0.55, w * 0.15, h * 0.25, -0.3, 0, Math.PI * 2);
+  cx.fill();
+  cx.globalAlpha = 1;
+
+  return { canvas: c, w: cw / TULIP_SPRITE_SCALE, h: ch / TULIP_SPRITE_SCALE, padBot };
+}
+
+function getTulipSprite(color) {
+  const key = color.main;
+  if (!tulipSpriteCache.has(key)) tulipSpriteCache.set(key, makeTulipSprite(color));
+  return tulipSpriteCache.get(key);
+}
+
+function drawLeaf(baseX, baseY, side, len, angle) {
+  // Long sword-shaped leaf curving away from stem base
+  fctx.save();
+  fctx.translate(baseX, baseY);
+  fctx.rotate(angle * 0.4);
+  const w = len * 0.18;
+  fctx.fillStyle = 'rgba(45, 100, 65, 0.85)';
+  fctx.beginPath();
+  fctx.moveTo(0, 0);
+  fctx.bezierCurveTo(side * w * 2, -len * 0.35, side * w * 3, -len * 0.75, side * w * 1.2, -len);
+  fctx.bezierCurveTo(side * w * 0.3, -len * 0.7, 0, -len * 0.35, 0, 0);
+  fctx.closePath();
+  fctx.fill();
+  fctx.restore();
+}
+
+function drawFlowers() {
+  for (const f of flowers) {
+    const brightness = 0.5 + f.depth * 0.5;
+    const stemColor = `rgba(55, 110, 70, ${0.6 + f.depth * 0.4})`;
+    const tipX = f.baseX + Math.sin(f.angle) * f.stemLen;
+    const tipY = f.baseY - Math.cos(f.angle) * f.stemLen;
+
+    // Leaf (behind stem)
+    if (f.hasLeaf) {
+      drawLeaf(f.baseX, f.baseY - 2, f.leafSide, f.stemLen * 0.55, f.angle);
+    }
+
+    // Stem
+    const midX = f.baseX + Math.sin(f.angle * 0.5) * f.stemLen * 0.55;
+    const midY = f.baseY - Math.cos(f.angle * 0.5) * f.stemLen * 0.55;
+    fctx.strokeStyle = stemColor;
+    fctx.lineWidth = f.stemW;
+    fctx.lineCap = 'round';
+    fctx.beginPath();
+    fctx.moveTo(f.baseX, f.baseY);
+    fctx.quadraticCurveTo(midX, midY, tipX, tipY);
+    fctx.stroke();
+
+    // Tulip head — cached sprite (no per-frame bezier + shadowBlur)
+    const sprite = getTulipSprite(f.color);
+    const scale = f.headH / TULIP_REF_H;
+    const drawW = sprite.w * scale;
+    const drawH = sprite.h * scale;
+    fctx.save();
+    fctx.translate(tipX, tipY);
+    fctx.rotate(f.angle);
+    fctx.globalAlpha = brightness;
+    fctx.drawImage(sprite.canvas, -drawW / 2, -drawH + sprite.padBot * scale, drawW, drawH);
+    fctx.globalAlpha = 1;
+    fctx.restore();
+  }
+
+  // Petals shed (no shadowBlur — very expensive; the color alone reads fine at speed)
+  for (const p of petals) {
+    const alpha = Math.min(1, p.life / 1.5);
+    fctx.save();
+    fctx.translate(p.x, p.y);
+    fctx.rotate(p.rot);
+    fctx.globalAlpha = alpha;
+    fctx.fillStyle = p.color;
+    fctx.beginPath();
+    fctx.ellipse(0, 0, p.size, p.size * 0.5, 0, 0, Math.PI * 2);
+    fctx.fill();
+    fctx.restore();
+  }
+  fctx.globalAlpha = 1;
+}
+
+// ============ MAIN LOOP ============
+// Pre-render sun: bright warm halo + golden outer glow + luminous disc
+let moonSprite = null;
+function getMoonSprite() {
+  if (moonSprite) return moonSprite;
+  const R = moon.r;
+  const size = Math.ceil(R * 8);
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const cx = c.getContext('2d');
+  const cxC = size / 2, cyC = size / 2;
+
+  // Outer warm haze — soft gold, blurred
+  cx.save();
+  cx.filter = 'blur(24px)';
+  const g1 = cx.createRadialGradient(cxC, cyC, 0, cxC, cyC, R * 3.8);
+  g1.addColorStop(0, 'rgba(255, 225, 140, 0.5)');
+  g1.addColorStop(0.4, 'rgba(255, 205, 110, 0.28)');
+  g1.addColorStop(1, 'rgba(255, 200, 100, 0)');
+  cx.fillStyle = g1;
+  cx.fillRect(0, 0, size, size);
+  cx.restore();
+
+  // Middle warm glow — bright gold
+  const g2 = cx.createRadialGradient(cxC, cyC, 0, cxC, cyC, R * 2.6);
+  g2.addColorStop(0, 'rgba(255, 240, 170, 0.6)');
+  g2.addColorStop(0.35, 'rgba(255, 215, 130, 0.3)');
+  g2.addColorStop(1, 'rgba(255, 210, 120, 0)');
+  cx.fillStyle = g2;
+  cx.fillRect(0, 0, size, size);
+
+  // Inner near-white halo
+  const g3 = cx.createRadialGradient(cxC, cyC, 0, cxC, cyC, R * 1.4);
+  g3.addColorStop(0, 'rgba(255, 255, 235, 0.9)');
+  g3.addColorStop(0.6, 'rgba(255, 250, 220, 0.4)');
+  g3.addColorStop(1, 'rgba(255, 250, 220, 0)');
+  cx.fillStyle = g3;
+  cx.fillRect(0, 0, size, size);
+
+  // Sun disc — luminous yellow-white
+  const disc = cx.createRadialGradient(cxC, cyC, 0, cxC, cyC, R);
+  disc.addColorStop(0, 'rgba(255, 255, 245, 1)');
+  disc.addColorStop(0.6, 'rgba(255, 240, 175, 1)');
+  disc.addColorStop(1, 'rgba(255, 210, 110, 1)');
+  cx.fillStyle = disc;
+  cx.beginPath();
+  cx.arc(cxC, cyC, R, 0, Math.PI * 2);
+  cx.fill();
+
+  // Bright rim highlight
+  const rim = cx.createRadialGradient(cxC - R * 0.25, cyC - R * 0.25, 0, cxC, cyC, R);
+  rim.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
+  rim.addColorStop(0.7, 'rgba(255, 255, 255, 0)');
+  cx.fillStyle = rim;
+  cx.beginPath();
+  cx.arc(cxC, cyC, R, 0, Math.PI * 2);
+  cx.fill();
+
+  moonSprite = c;
+  return c;
+}
+let t = 0, lastFrame = performance.now(), smoothSpeed = 1;
+function draw(now) {
+  if (!now) now = performance.now();
+  const dt = Math.min((now - lastFrame) / 1000, 0.05);
+  lastFrame = now;
+
+  // Sky (sun + clouds)
+  ctx.clearRect(0, 0, W, H);
+  smoothSpeed += (speedMult - smoothSpeed) * Math.min(dt * 4, 1);
+  t += dt * smoothSpeed;
+
+  // Sun (cached sprite)
+  const mx = moon.x * W, my = moon.y * H;
+  const ms = getMoonSprite();
+  ctx.drawImage(ms, mx - ms.width / 2, my - ms.height / 2);
+
+  // Clouds — soft drifting puffs
+  for (const c of clouds) {
+    c.x += c.speed * dt;
+    if (c.x > 1.25) c.x = -0.25;
+    const cx = c.x * W, cy = c.y * H;
+    ctx.globalAlpha = c.alpha;
+    ctx.fillStyle = '#ffffff';
+    for (const p of c.puffs) {
+      ctx.beginPath();
+      ctx.arc(cx + p.dx * c.scale, cy + p.dy * c.scale, p.r * c.scale, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // Sparkles drifting through the daytime sky
+  updateFireflies(dt);
+  updateRipples(dt);
+  drawRipples();
+  drawFireflies();
+
+  // Butterflies passing by
+  updateButterflies(dt);
+  drawButterflies();
+
+  // Flowers
+  fctx.clearRect(0, 0, FW, FH);
+  applyFieldShake(dt);
+  updateFlowers(dt);
+  drawGrass();
+  drawFlowers();
+  drawTouchGlow();
+
+  requestAnimationFrame(draw);
+}
+
+resize();
+requestAnimationFrame(() => resize());
+setTimeout(resize, 200);
+window.addEventListener('load', resize);
+window.addEventListener('orientationchange', () => setTimeout(resize, 150));
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', resize);
+}
+draw();
+</script>
+</body>
+</html>
