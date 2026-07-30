@@ -1666,25 +1666,33 @@ draw();
 
 // ============ CHARACTER PEEK — slow reveal, startled retreat ============
 const character = document.getElementById('character');
-character.play().catch(() => {});
+character.muted = true;
+const tryPlay = () => character.play().catch(() => {});
+tryPlay();
+['pointerdown', 'touchend', 'click', 'keydown'].forEach(evt =>
+  window.addEventListener(evt, tryPlay, { capture: true, passive: true })
+);
+
 function schedulePeek() {
-  const hiddenMs = 5000; // 5s hidden between peeks
+  // Hidden 5–9s between peeks → ~5–7 peeks per minute (3s visible each)
+  const hiddenMs = 5000 + Math.random() * 4000;
   setTimeout(() => {
     // Random horizontal position each cycle
     const charW = character.offsetWidth || 0;
     const maxLeft = Math.max(0, window.innerWidth - charW);
     character.style.left = (Math.random() * maxLeft) + 'px';
+    tryPlay();
 
-    character.classList.remove('retreating');
-    character.classList.add('peek');
+    // Slow spring peek up
+    character.style.transition = 'transform 0.85s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    character.style.transform = 'translateY(35%)';
 
-    // Stay visible 5–8s while the video keeps looping
-    const visibleMs = 5000 + Math.random() * 3000;
+    // Stay visible ~3s, then quick startled retreat
     setTimeout(() => {
-      character.classList.add('retreating');
-      character.classList.remove('peek');
+      character.style.transition = 'transform 0.28s cubic-bezier(0.55, 0, 0.1, 1)';
+      character.style.transform = 'translateY(105%)';
       setTimeout(schedulePeek, 350);
-    }, visibleMs);
+    }, 3000);
   }, hiddenMs);
 }
 schedulePeek();
