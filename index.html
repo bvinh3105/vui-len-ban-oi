@@ -202,13 +202,11 @@
     max-width: 80vw;
     height: auto;
     transform: translateY(105%);
+    transform-origin: center center;
     z-index: 300;
     pointer-events: none;
-    transition: transform 0.85s cubic-bezier(0.34, 1.56, 0.64, 1);
     filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.3));
   }
-  #character.peek { transform: translateY(35%); }
-  #character.retreating { transition: transform 0.28s cubic-bezier(0.55, 0, 0.1, 1); }
 
   #flames-canvas {
     position: fixed;
@@ -225,7 +223,8 @@
 
 <canvas id="canvas"></canvas>
 <canvas id="flowers"></canvas>
-<video id="character" src="character.webm" autoplay loop muted playsinline></video>
+<img id="character" src="character.png" alt="">
+
 <canvas id="flames-canvas"></canvas>
 <div id="moon-hit" aria-label="mặt trời"></div>
 <audio id="bgm" loop preload="auto" playsinline></audio>
@@ -1720,38 +1719,68 @@ if (window.visualViewport) {
 }
 draw();
 
-// ============ CHARACTER PEEK — slow reveal, startled retreat ============
+// ============ CHARACTER PEEK — random edge, slow reveal, startled retreat ============
 const character = document.getElementById('character');
-character.muted = true;
-const tryPlay = () => character.play().catch(() => {});
-tryPlay();
-['pointerdown', 'touchend', 'click', 'keydown'].forEach(evt =>
-  window.addEventListener(evt, tryPlay, { capture: true, passive: true })
-);
+
+function doPeek() {
+  const sides = ['bottom', 'top', 'left', 'right'];
+  const side = sides[Math.floor(Math.random() * sides.length)];
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const w = character.offsetWidth || 880;
+  const h = character.offsetHeight || (w * 1435 / 880);
+  const s = character.style;
+
+  let hideT, peekT;
+  if (side === 'bottom') {
+    s.top = 'auto'; s.bottom = '-10px';
+    s.left = (Math.random() * Math.max(0, vw - w)) + 'px';
+    s.right = 'auto';
+    hideT = 'translateY(105%) rotate(0deg)';
+    peekT = 'translateY(45%) rotate(0deg)';
+  } else if (side === 'top') {
+    s.top = '-10px'; s.bottom = 'auto';
+    s.left = (Math.random() * Math.max(0, vw - w)) + 'px';
+    s.right = 'auto';
+    hideT = 'translateY(-105%) rotate(180deg)';
+    peekT = 'translateY(-45%) rotate(180deg)';
+  } else if (side === 'left') {
+    s.top = (Math.random() * Math.max(0, vh - h)) + 'px'; s.bottom = 'auto';
+    s.left = '0px'; s.right = 'auto';
+    const hidePx = -Math.round((w + h) / 2 + 30);
+    const peekPx = Math.round(0.55 * h - (w + h) / 2);
+    hideT = `translateX(${hidePx}px) rotate(90deg)`;
+    peekT = `translateX(${peekPx}px) rotate(90deg)`;
+  } else { // right
+    s.top = (Math.random() * Math.max(0, vh - h)) + 'px'; s.bottom = 'auto';
+    s.left = 'auto'; s.right = '0px';
+    const hidePx = Math.round((w + h) / 2 + 30);
+    const peekPx = -Math.round(0.55 * h - (w + h) / 2);
+    hideT = `translateX(${hidePx}px) rotate(-90deg)`;
+    peekT = `translateX(${peekPx}px) rotate(-90deg)`;
+  }
+
+  // Snap to hidden state, then animate to peek
+  s.transition = 'none';
+  s.transform = hideT;
+  void character.offsetWidth; // force reflow so the next transition takes effect
+  s.transition = 'transform 0.85s cubic-bezier(0.34, 1.56, 0.64, 1)';
+  s.transform = peekT;
+
+  // Visible 2–3s, then quick startled retreat
+  const visibleMs = 2000 + Math.random() * 1000;
+  setTimeout(() => {
+    s.transition = 'transform 0.28s cubic-bezier(0.55, 0, 0.1, 1)';
+    s.transform = hideT;
+    setTimeout(schedulePeek, 350);
+  }, visibleMs);
+}
 
 let firstPeek = true;
 function schedulePeek() {
-  // First peek fires 2–5s after load for a surprise; then hidden 5–9s (~5–7 peeks/min)
-  const hiddenMs = firstPeek ? (2000 + Math.random() * 3000) : (5000 + Math.random() * 4000);
+  // First peek fires 2–5s after load for surprise; then hidden 6–10s (~5–7 peeks/min with 2–3s visible)
+  const hiddenMs = firstPeek ? (2000 + Math.random() * 3000) : (6000 + Math.random() * 4000);
   firstPeek = false;
-  setTimeout(() => {
-    // Random horizontal position each cycle
-    const charW = character.offsetWidth || 0;
-    const maxLeft = Math.max(0, window.innerWidth - charW);
-    character.style.left = (Math.random() * maxLeft) + 'px';
-    tryPlay();
-
-    // Slow spring peek up
-    character.style.transition = 'transform 0.85s cubic-bezier(0.34, 1.56, 0.64, 1)';
-    character.style.transform = 'translateY(35%)';
-
-    // Stay visible ~3s, then quick startled retreat
-    setTimeout(() => {
-      character.style.transition = 'transform 0.28s cubic-bezier(0.55, 0, 0.1, 1)';
-      character.style.transform = 'translateY(105%)';
-      setTimeout(schedulePeek, 350);
-    }, 3000);
-  }, hiddenMs);
+  setTimeout(doPeek, hiddenMs);
 }
 schedulePeek();
 </script>
