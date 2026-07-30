@@ -198,9 +198,11 @@
     position: fixed;
     bottom: -10px;
     left: 0;
-    width: 880px;
-    max-width: 80vw;
+    width: 520px;
+    max-width: 60vw;
+    max-height: 70vh;
     height: auto;
+    object-fit: contain;
     transform: translateY(105%);
     transform-origin: center center;
     z-index: 300;
@@ -1736,25 +1738,25 @@ function doPeek() {
     s.left = (Math.random() * Math.max(0, vw - w)) + 'px';
     s.right = 'auto';
     hideT = 'translateY(105%) rotate(0deg)';
-    peekT = 'translateY(45%) rotate(0deg)';
+    peekT = 'translateY(65%) rotate(0deg)';
   } else if (side === 'top') {
     s.top = '-10px'; s.bottom = 'auto';
     s.left = (Math.random() * Math.max(0, vw - w)) + 'px';
     s.right = 'auto';
     hideT = 'translateY(-105%) rotate(180deg)';
-    peekT = 'translateY(-45%) rotate(180deg)';
+    peekT = 'translateY(-65%) rotate(180deg)';
   } else if (side === 'left') {
     s.top = (Math.random() * Math.max(0, vh - h)) + 'px'; s.bottom = 'auto';
     s.left = '0px'; s.right = 'auto';
     const hidePx = -Math.round((w + h) / 2 + 30);
-    const peekPx = Math.round(0.55 * h - (w + h) / 2);
+    const peekPx = Math.round(0.32 * h - (w + h) / 2);
     hideT = `translateX(${hidePx}px) rotate(90deg)`;
     peekT = `translateX(${peekPx}px) rotate(90deg)`;
   } else { // right
     s.top = (Math.random() * Math.max(0, vh - h)) + 'px'; s.bottom = 'auto';
     s.left = 'auto'; s.right = '0px';
     const hidePx = Math.round((w + h) / 2 + 30);
-    const peekPx = -Math.round(0.55 * h - (w + h) / 2);
+    const peekPx = -Math.round(0.32 * h - (w + h) / 2);
     hideT = `translateX(${hidePx}px) rotate(-90deg)`;
     peekT = `translateX(${peekPx}px) rotate(-90deg)`;
   }
@@ -1777,12 +1779,14 @@ function doPeek() {
 
 let firstPeek = true;
 function schedulePeek() {
-  // First peek fires 2–5s after load for surprise; then hidden 6–10s (~5–7 peeks/min with 2–3s visible)
-  const hiddenMs = firstPeek ? (2000 + Math.random() * 3000) : (6000 + Math.random() * 4000);
+  // First peek fires ~1s after load so the surprise lands early; then hidden 6–10s (~5–7 peeks/min with 2–3s visible)
+  const hiddenMs = firstPeek ? (800 + Math.random() * 800) : (6000 + Math.random() * 4000);
   firstPeek = false;
   setTimeout(doPeek, hiddenMs);
 }
-schedulePeek();
+// Wait for the image to be measurable before scheduling (offsetHeight is 0 until it loads)
+if (character.complete && character.naturalWidth > 0) schedulePeek();
+else character.addEventListener('load', schedulePeek, { once: true });
 </script>
 </body>
 </html>
