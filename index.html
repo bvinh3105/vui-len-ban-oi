@@ -209,6 +209,16 @@
   }
   #character.peek { transform: translateY(35%); }
   #character.retreating { transition: transform 0.28s cubic-bezier(0.55, 0, 0.1, 1); }
+
+  #flames-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    height: 100dvh;
+    pointer-events: none;
+    z-index: 200;
+    display: block;
+  }
 </style>
 </head>
 <body>
@@ -216,6 +226,7 @@
 <canvas id="canvas"></canvas>
 <canvas id="flowers"></canvas>
 <video id="character" src="character.webm" autoplay loop muted playsinline></video>
+<canvas id="flames-canvas"></canvas>
 <div id="moon-hit" aria-label="mặt trời"></div>
 <audio id="bgm" loop preload="auto" playsinline></audio>
 <button id="mute-btn" class="muted" aria-label="Bật/tắt nhạc">🔇</button>
@@ -288,6 +299,8 @@ muteBtn.addEventListener('pointerdown', e => e.stopPropagation());
 // ============ STAR CANVAS ============
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
+const flamesCanvas = document.getElementById('flames-canvas');
+const fctxTop = flamesCanvas.getContext('2d');
 const btn = document.getElementById('btn');
 btn.textContent = isNight ? '✨ Chúc bạn ngủ ngon ✨' : '☀️ Vui lên đi Thảo ☀️';
 const comboBarWrap = document.getElementById('combo-bar-wrap');
@@ -301,6 +314,9 @@ function resize() {
   canvas.width = W * dpr; canvas.height = H * dpr;
   canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  flamesCanvas.width = W * dpr; flamesCanvas.height = H * dpr;
+  flamesCanvas.style.width = W + 'px'; flamesCanvas.style.height = H + 'px';
+  fctxTop.setTransform(dpr, 0, 0, dpr, 0, 0);
   resizeFlowers();
   if (typeof positionMoonHit === 'function') positionMoonHit();
 }
@@ -308,28 +324,47 @@ window.addEventListener('resize', resize);
 
 function randBetween(a, b) { return a + Math.random() * (b - a); }
 
-// Clouds (day) — soft, drifting
+// Clouds (day) — front layer (drawn on top of sun) and back layer (drifts behind sun)
 const clouds = [];
-if (!isNight) {
-  const NUM_CLOUDS = 6;
-  for (let i = 0; i < NUM_CLOUDS; i++) {
-    const puffCount = 4 + Math.floor(Math.random() * 3);
-    const puffs = [];
-    for (let j = 0; j < puffCount; j++) {
-      puffs.push({
-        dx: (Math.random() - 0.5) * 90,
-        dy: (Math.random() - 0.5) * 18,
-        r: 22 + Math.random() * 24,
-      });
-    }
-    clouds.push({
-      x: Math.random(),
-      y: 0.06 + Math.random() * 0.28,
-      scale: 0.7 + Math.random() * 1.1,
-      speed: 0.008 + Math.random() * 0.012,
-      alpha: 0.75 + Math.random() * 0.2,
-      puffs,
+const cloudsBack = [];
+function makeCloud(opts) {
+  const puffCount = 4 + Math.floor(Math.random() * 3);
+  const puffs = [];
+  for (let j = 0; j < puffCount; j++) {
+    puffs.push({
+      dx: (Math.random() - 0.5) * opts.puffSpread,
+      dy: (Math.random() - 0.5) * (opts.puffSpread * 0.2),
+      r: opts.puffRMin + Math.random() * opts.puffRRange,
     });
+  }
+  return {
+    x: Math.random(),
+    y: opts.yMin + Math.random() * opts.yRange,
+    scale: opts.scaleMin + Math.random() * opts.scaleRange,
+    speed: opts.speedMin + Math.random() * opts.speedRange,
+    alpha: opts.alphaMin + Math.random() * opts.alphaRange,
+    puffs,
+  };
+}
+if (!isNight) {
+  for (let i = 0; i < 6; i++) {
+    clouds.push(makeCloud({
+      puffSpread: 90, puffRMin: 22, puffRRange: 24,
+      yMin: 0.06, yRange: 0.28,
+      scaleMin: 0.7, scaleRange: 1.1,
+      speedMin: 0.008, speedRange: 0.012,
+      alphaMin: 0.75, alphaRange: 0.2,
+    }));
+  }
+  // Back layer — bigger, slower, softer, drift behind the sun
+  for (let i = 0; i < 4; i++) {
+    cloudsBack.push(makeCloud({
+      puffSpread: 130, puffRMin: 32, puffRRange: 32,
+      yMin: 0.05, yRange: 0.22,
+      scaleMin: 1.0, scaleRange: 1.4,
+      speedMin: 0.004, speedRange: 0.007,
+      alphaMin: 0.45, alphaRange: 0.2,
+    }));
   }
 }
 
@@ -490,19 +525,18 @@ function triggerFire() {
   }
   fieldShakeUntil = performance.now() + 1400;
 
-  const rect = btn.getBoundingClientRect();
-  // Main flame body — rises from bottom of text
-  const count = 90;
+  // Main flame wall — rises from the bottom of the screen
+  const count = 140;
   for (let i = 0; i < count; i++) {
-    const px = rect.left + Math.random() * rect.width;
-    const py = rect.bottom - Math.random() * rect.height * 0.35;
+    const px = Math.random() * W;
+    const py = H - Math.random() * 40;
     flames.push({
       x: px, y: py,
-      vx: randBetween(-1.2, 1.2),
-      vy: randBetween(-5.5, -3),
-      size: randBetween(5, 12),
-      life: randBetween(0.7, 1.4),
-      maxLife: 1.4,
+      vx: randBetween(-1.5, 1.5),
+      vy: randBetween(-8, -4.5),
+      size: randBetween(8, 18),
+      life: randBetween(1.1, 2.0),
+      maxLife: 2.0,
       wobble: Math.random() * Math.PI * 2,
       wobbleSpeed: randBetween(5, 10),
       sprite: flameSprites[Math.floor(Math.random() * flameSprites.length)],
@@ -510,17 +544,17 @@ function triggerFire() {
       ember: false,
     });
   }
-  // Embers — smaller, longer-lived
-  for (let i = 0; i < 40; i++) {
-    const px = rect.left + Math.random() * rect.width;
-    const py = rect.bottom - Math.random() * rect.height * 0.5;
+  // Embers — smaller, faster, longer-lived, drift high
+  for (let i = 0; i < 70; i++) {
+    const px = Math.random() * W;
+    const py = H - Math.random() * 60;
     flames.push({
       x: px, y: py,
-      vx: randBetween(-1.8, 1.8),
-      vy: randBetween(-4.5, -2),
-      size: randBetween(2, 4),
-      life: randBetween(1.4, 2.6),
-      maxLife: 2.6,
+      vx: randBetween(-2.5, 2.5),
+      vy: randBetween(-7, -3.5),
+      size: randBetween(3, 6),
+      life: randBetween(2.0, 3.5),
+      maxLife: 3.5,
       wobble: Math.random() * Math.PI * 2,
       wobbleSpeed: randBetween(3, 6),
       sprite: flameSprites[0],
@@ -545,23 +579,24 @@ function updateFlames(dt) {
 }
 
 function drawFlames() {
+  fctxTop.clearRect(0, 0, W, H);
   if (flames.length === 0) return;
-  ctx.save();
-  ctx.globalCompositeOperation = 'lighter';
+  fctxTop.save();
+  fctxTop.globalCompositeOperation = 'lighter';
   for (const f of flames) {
     const t = f.life / f.maxLife;
     const alpha = Math.min(1, t * 1.6);
     const r = f.size * 4;
-    ctx.globalAlpha = alpha;
-    ctx.drawImage(f.sprite, f.x - r, f.y - r, r * 2, r * 2);
-    ctx.globalAlpha = alpha * 0.95;
-    ctx.fillStyle = f.coreColor;
-    ctx.beginPath();
-    ctx.arc(f.x, f.y, f.size * 0.42, 0, Math.PI * 2);
-    ctx.fill();
+    fctxTop.globalAlpha = alpha;
+    fctxTop.drawImage(f.sprite, f.x - r, f.y - r, r * 2, r * 2);
+    fctxTop.globalAlpha = alpha * 0.95;
+    fctxTop.fillStyle = f.coreColor;
+    fctxTop.beginPath();
+    fctxTop.arc(f.x, f.y, f.size * 0.42, 0, Math.PI * 2);
+    fctxTop.fill();
   }
-  ctx.globalAlpha = 1;
-  ctx.restore();
+  fctxTop.globalAlpha = 1;
+  fctxTop.restore();
 }
 
 // Ripples for sun/moon-tap visual feedback
@@ -1593,6 +1628,23 @@ function draw(now) {
   smoothSpeed += (speedMult - smoothSpeed) * Math.min(dt * 4, 1);
   t += dt * smoothSpeed;
 
+  // Back cloud layer — drawn BEFORE the sun so it appears to drift behind it
+  if (!isNight) {
+    for (const c of cloudsBack) {
+      c.x += c.speed * dt;
+      if (c.x > 1.3) c.x = -0.3;
+      const cx = c.x * W, cy = c.y * H;
+      ctx.globalAlpha = c.alpha;
+      ctx.fillStyle = '#ffffff';
+      for (const p of c.puffs) {
+        ctx.beginPath();
+        ctx.arc(cx + p.dx * c.scale, cy + p.dy * c.scale, p.r * c.scale, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
   // Sun / Moon (cached sprite)
   const mx = moon.x * W, my = moon.y * H;
   const ms = getMoonSprite();
@@ -1615,12 +1667,16 @@ function draw(now) {
       }
     }
   } else {
-    // Clouds — soft drifting puffs
+    // Front cloud layer — fade over the sun so it still shows through
+    const sunHaloR = moon.r * 3.2;
     for (const c of clouds) {
       c.x += c.speed * dt;
       if (c.x > 1.25) c.x = -0.25;
       const cx = c.x * W, cy = c.y * H;
-      ctx.globalAlpha = c.alpha;
+      const sunDx = cx - mx, sunDy = cy - my;
+      const sunDist = Math.sqrt(sunDx * sunDx + sunDy * sunDy);
+      const sunFade = Math.max(0.2, Math.min(1, sunDist / sunHaloR));
+      ctx.globalAlpha = c.alpha * sunFade;
       ctx.fillStyle = '#ffffff';
       for (const p of c.puffs) {
         ctx.beginPath();
@@ -1673,9 +1729,11 @@ tryPlay();
   window.addEventListener(evt, tryPlay, { capture: true, passive: true })
 );
 
+let firstPeek = true;
 function schedulePeek() {
-  // Hidden 5–9s between peeks → ~5–7 peeks per minute (3s visible each)
-  const hiddenMs = 5000 + Math.random() * 4000;
+  // First peek fires 2–5s after load for a surprise; then hidden 5–9s (~5–7 peeks/min)
+  const hiddenMs = firstPeek ? (2000 + Math.random() * 3000) : (5000 + Math.random() * 4000);
+  firstPeek = false;
   setTimeout(() => {
     // Random horizontal position each cycle
     const charW = character.offsetWidth || 0;
