@@ -3,21 +3,60 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Chúc bạn một ngày tốt lành</title>
+<title>Vui lên bạn ơi</title>
+<script>
+  (function() {
+    var h = new Date().getHours();
+    var isNight = h >= 20 || h < 6;
+    document.documentElement.classList.add(isNight ? 'night' : 'day');
+  })();
+</script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html.day {
+    --bg-color: #a8dafc;
+    --bg-gradient: radial-gradient(ellipse at 78% 22%, #fff3c8 0%, #ffe38a 12%, #bfe4fb 40%, #7cc2f0 100%);
+    --msg-shadow: 0 0 16px rgba(255, 180, 80, 0.85), 0 0 32px rgba(255, 130, 40, 0.5), 0 2px 8px rgba(140, 70, 20, 0.4);
+    --msg-shadow-hover: 0 0 22px rgba(255, 210, 130, 0.95), 0 0 44px rgba(255, 160, 60, 0.6), 0 0 80px rgba(230, 120, 30, 0.4);
+    --combo-track: rgba(0, 0, 0, 0.1);
+    --combo-fill: linear-gradient(90deg, #ffb84d, #ff5a3c);
+    --hint-color: rgba(20, 45, 75, 0.55);
+    --mute-bg: rgba(255, 255, 255, 0.5);
+    --mute-fg: rgba(60, 40, 20, 0.85);
+    --mute-border: rgba(255, 255, 255, 0.7);
+    --mute-bg-hover: rgba(255, 255, 255, 0.75);
+    --mute-fg-hover: #3a2810;
+    --mute-fg-muted: rgba(60, 40, 20, 0.4);
+  }
+
+  html.night {
+    --bg-color: #01030a;
+    --bg-gradient: radial-gradient(ellipse at 50% 30%, #12203a 0%, #060d1e 55%, #01030a 100%);
+    --msg-shadow: 0 0 16px rgba(180, 120, 255, 0.7), 0 0 32px rgba(120, 80, 200, 0.4);
+    --msg-shadow-hover: 0 0 22px rgba(200, 140, 255, 0.95), 0 0 44px rgba(140, 90, 220, 0.55), 0 0 80px rgba(80, 40, 160, 0.35);
+    --combo-track: rgba(255, 255, 255, 0.08);
+    --combo-fill: linear-gradient(90deg, #7b5fd4, #d97bf7);
+    --hint-color: rgba(255, 255, 255, 0.35);
+    --mute-bg: rgba(255, 255, 255, 0.08);
+    --mute-fg: rgba(255, 255, 255, 0.75);
+    --mute-border: rgba(255, 255, 255, 0.15);
+    --mute-bg-hover: rgba(255, 255, 255, 0.15);
+    --mute-fg-hover: #ffffff;
+    --mute-fg-muted: rgba(255, 255, 255, 0.35);
+  }
 
   html, body {
     overscroll-behavior: none;
     touch-action: none;
     width: 100%;
     height: 100%;
-    background: #a8dafc;
+    background: var(--bg-color);
   }
 
   body {
-    background: radial-gradient(ellipse at 78% 22%, #fff3c8 0%, #ffe38a 12%, #bfe4fb 40%, #7cc2f0 100%);
-    background-color: #a8dafc;
+    background: var(--bg-gradient);
+    background-color: var(--bg-color);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -66,10 +105,7 @@
     font-size: clamp(1.7rem, 5.2vw, 3.1rem);
     font-weight: 700;
     color: #ffffff;
-    text-shadow:
-      0 0 16px rgba(255, 180, 80, 0.85),
-      0 0 32px rgba(255, 130, 40, 0.5),
-      0 2px 8px rgba(140, 70, 20, 0.4);
+    text-shadow: var(--msg-shadow);
     letter-spacing: 0.06em;
     line-height: 1.35;
     animation: breathe 4s ease-in-out infinite;
@@ -82,10 +118,7 @@
   }
 
   .message:hover {
-    text-shadow:
-      0 0 22px rgba(255, 210, 130, 0.95),
-      0 0 44px rgba(255, 160, 60, 0.6),
-      0 0 80px rgba(230, 120, 30, 0.4);
+    text-shadow: var(--msg-shadow-hover);
   }
 
   .message.active { transform: scale(0.96); }
@@ -98,7 +131,7 @@
   #combo-bar-wrap {
     width: 160px;
     height: 4px;
-    background: rgba(0,0,0,0.1);
+    background: var(--combo-track);
     border-radius: 4px;
     overflow: hidden;
     opacity: 0;
@@ -108,7 +141,7 @@
   #combo-bar {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, #ffb84d, #ff5a3c);
+    background: var(--combo-fill);
     border-radius: 4px;
     transition: width 0.15s ease;
   }
@@ -120,7 +153,7 @@
     bottom: 12px;
     left: 0; right: 0;
     text-align: center;
-    color: rgba(20, 45, 75, 0.55);
+    color: var(--hint-color);
     font-size: 12px;
     letter-spacing: 0.1em;
     z-index: 20;
@@ -133,9 +166,9 @@
     top: 14px;
     right: 14px;
     z-index: 30;
-    background: rgba(255,255,255,0.5);
-    color: rgba(60, 40, 20, 0.85);
-    border: 1px solid rgba(255,255,255,0.7);
+    background: var(--mute-bg);
+    color: var(--mute-fg);
+    border: 1px solid var(--mute-border);
     width: 40px; height: 40px;
     border-radius: 50%;
     font-size: 18px;
@@ -147,8 +180,8 @@
     line-height: 1;
     padding: 0;
   }
-  #mute-btn:hover { background: rgba(255,255,255,0.75); color: #3a2810; }
-  #mute-btn.muted { color: rgba(60, 40, 20, 0.4); }
+  #mute-btn:hover { background: var(--mute-bg-hover); color: var(--mute-fg-hover); }
+  #mute-btn.muted { color: var(--mute-fg-muted); }
 
   #moon-hit {
     position: fixed;
@@ -171,13 +204,18 @@
 <button id="mute-btn" class="muted" aria-label="Bật/tắt nhạc">🔇</button>
 
 <div class="center">
-  <div class="message" id="btn">☀️ Chúc bạn một ngày tốt lành ☀️</div>
+  <div class="message" id="btn">☀️ Vui lên bạn ơi ☀️</div>
   <div id="combo-bar-wrap"><div id="combo-bar"></div></div>
 </div>
 
 <div class="hint">lướt tay vào cánh đồng hoa tulip 🌷</div>
 
 <script>
+// ============ TIME-OF-DAY MODE ============
+const isNight = document.documentElement.classList.contains('night');
+document.title = isNight ? 'Chúc bạn ngủ ngon' : 'Vui lên bạn ơi';
+document.getElementById('moon-hit').setAttribute('aria-label', isNight ? 'mặt trăng' : 'mặt trời');
+
 // ============ BACKGROUND MUSIC ============
 const bgm = document.getElementById('bgm');
 const muteBtn = document.getElementById('mute-btn');
@@ -233,6 +271,7 @@ muteBtn.addEventListener('pointerdown', e => e.stopPropagation());
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const btn = document.getElementById('btn');
+btn.textContent = isNight ? '✨ Chúc bạn ngủ ngon ✨' : '☀️ Vui lên bạn ơi ☀️';
 const comboBarWrap = document.getElementById('combo-bar-wrap');
 const comboBar = document.getElementById('combo-bar');
 
@@ -251,31 +290,52 @@ window.addEventListener('resize', resize);
 
 function randBetween(a, b) { return a + Math.random() * (b - a); }
 
-// Clouds — soft, drifting
+// Clouds (day) — soft, drifting
 const clouds = [];
-const NUM_CLOUDS = 6;
-for (let i = 0; i < NUM_CLOUDS; i++) {
-  const puffCount = 4 + Math.floor(Math.random() * 3);
-  const puffs = [];
-  for (let j = 0; j < puffCount; j++) {
-    puffs.push({
-      dx: (Math.random() - 0.5) * 90,
-      dy: (Math.random() - 0.5) * 18,
-      r: 22 + Math.random() * 24,
+if (!isNight) {
+  const NUM_CLOUDS = 6;
+  for (let i = 0; i < NUM_CLOUDS; i++) {
+    const puffCount = 4 + Math.floor(Math.random() * 3);
+    const puffs = [];
+    for (let j = 0; j < puffCount; j++) {
+      puffs.push({
+        dx: (Math.random() - 0.5) * 90,
+        dy: (Math.random() - 0.5) * 18,
+        r: 22 + Math.random() * 24,
+      });
+    }
+    clouds.push({
+      x: Math.random(),
+      y: 0.06 + Math.random() * 0.28,
+      scale: 0.7 + Math.random() * 1.1,
+      speed: 0.008 + Math.random() * 0.012,
+      alpha: 0.75 + Math.random() * 0.2,
+      puffs,
     });
   }
-  clouds.push({
-    x: Math.random(),
-    y: 0.06 + Math.random() * 0.28,
-    scale: 0.7 + Math.random() * 1.1,
-    speed: 0.008 + Math.random() * 0.012,
-    alpha: 0.75 + Math.random() * 0.2,
-    puffs,
-  });
 }
 
-// Sun — bright, warm
-const moon = { x: 0.82, y: 0.2, r: 58 };
+// Stars (night)
+const stars = [];
+if (isNight) {
+  const NUM_STARS = 180;
+  const starPalette = ['255,255,255','220,200,255','180,210,255','255,220,180','200,240,255'];
+  for (let i = 0; i < NUM_STARS; i++) {
+    stars.push({
+      x: Math.random(),
+      y: Math.random() * 0.65,
+      r: randBetween(0.4, 2.6),
+      baseAlpha: randBetween(0.3, 1.0),
+      alpha: 0,
+      phase: Math.random() * Math.PI * 2,
+      speed: randBetween(0.4, 1.4),
+      color: starPalette[Math.floor(Math.random() * starPalette.length)],
+    });
+  }
+}
+
+// Sun (day) / Moon (night) — bright, warm
+const moon = { x: 0.82, y: 0.2, r: isNight ? 52 : 58 };
 
 // Combo
 let comboCount = 0, lastClickTime = 0, comboTimeout = null;
@@ -308,7 +368,7 @@ function handleClick() {
   comboBarWrap.classList.add('visible');
   updateComboBar();
   if (comboCount >= COMBO_THRESHOLD) {
-    triggerFireflies();
+    triggerFire();
     comboCount = 0; updateComboBar(); speedMult = 1;
     // Defensive: any stuck pointer state from rapid combo taps gets cleared
     releasePointer();
@@ -384,7 +444,109 @@ function spawnFireflyAt(gx, gy, opts = {}) {
   });
 }
 
-// Ripples for moon-tap visual feedback
+// ============ FIRE BURST — emitted from the message when combo hits ============
+const flames = [];
+const flameSprites = [];
+function makeFlameSprite(hue) {
+  const size = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const cx = c.getContext('2d');
+  const g = cx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0, `hsla(${hue + 20}, 100%, 85%, 0.95)`);
+  g.addColorStop(0.15, `hsla(${hue + 10}, 100%, 65%, 0.7)`);
+  g.addColorStop(0.4, `hsla(${hue}, 100%, 50%, 0.35)`);
+  g.addColorStop(0.75, `hsla(${hue - 15}, 100%, 40%, 0.12)`);
+  g.addColorStop(1, `hsla(${hue - 20}, 100%, 40%, 0)`);
+  cx.fillStyle = g;
+  cx.fillRect(0, 0, size, size);
+  return c;
+}
+[10, 22, 35].forEach(h => flameSprites.push(makeFlameSprite(h)));
+
+function triggerFire() {
+  // Shake the flower field for extra impact
+  for (const f of flowers) {
+    const dir = Math.random() < 0.5 ? -1 : 1;
+    f.vel += dir * randBetween(5, 12) * (0.5 + f.depth);
+  }
+  fieldShakeUntil = performance.now() + 1400;
+
+  const rect = btn.getBoundingClientRect();
+  // Main flame body — rises from bottom of text
+  const count = 90;
+  for (let i = 0; i < count; i++) {
+    const px = rect.left + Math.random() * rect.width;
+    const py = rect.bottom - Math.random() * rect.height * 0.35;
+    flames.push({
+      x: px, y: py,
+      vx: randBetween(-1.2, 1.2),
+      vy: randBetween(-5.5, -3),
+      size: randBetween(5, 12),
+      life: randBetween(0.7, 1.4),
+      maxLife: 1.4,
+      wobble: Math.random() * Math.PI * 2,
+      wobbleSpeed: randBetween(5, 10),
+      sprite: flameSprites[Math.floor(Math.random() * flameSprites.length)],
+      coreColor: `hsl(${45 + Math.random() * 15}, 100%, 90%)`,
+      ember: false,
+    });
+  }
+  // Embers — smaller, longer-lived
+  for (let i = 0; i < 40; i++) {
+    const px = rect.left + Math.random() * rect.width;
+    const py = rect.bottom - Math.random() * rect.height * 0.5;
+    flames.push({
+      x: px, y: py,
+      vx: randBetween(-1.8, 1.8),
+      vy: randBetween(-4.5, -2),
+      size: randBetween(2, 4),
+      life: randBetween(1.4, 2.6),
+      maxLife: 2.6,
+      wobble: Math.random() * Math.PI * 2,
+      wobbleSpeed: randBetween(3, 6),
+      sprite: flameSprites[0],
+      coreColor: 'hsl(45, 100%, 88%)',
+      ember: true,
+    });
+  }
+}
+
+function updateFlames(dt) {
+  for (let i = flames.length - 1; i >= 0; i--) {
+    const f = flames[i];
+    f.wobble += f.wobbleSpeed * dt;
+    f.x += (f.vx + Math.sin(f.wobble) * 0.6) * dt * 60;
+    f.y += f.vy * dt * 60;
+    f.vy *= 0.98;
+    f.vx *= 0.97;
+    if (!f.ember) f.size *= 0.992;
+    f.life -= dt;
+    if (f.life <= 0 || f.size < 0.5) flames.splice(i, 1);
+  }
+}
+
+function drawFlames() {
+  if (flames.length === 0) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const f of flames) {
+    const t = f.life / f.maxLife;
+    const alpha = Math.min(1, t * 1.6);
+    const r = f.size * 4;
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(f.sprite, f.x - r, f.y - r, r * 2, r * 2);
+    ctx.globalAlpha = alpha * 0.95;
+    ctx.fillStyle = f.coreColor;
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.size * 0.42, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+// Ripples for sun/moon-tap visual feedback
 const ripples = [];
 function spawnRipple(x, y, color) {
   ripples.push({ x, y, r: 0, maxR: 120, life: 1, color });
@@ -1116,16 +1278,21 @@ function spawnPetal(x, y, color, pvx, pvy) {
 }
 
 function drawGrass() {
-  // Grass gradient — sunlit meadow
   const grad = fctx.createLinearGradient(0, FH * 0.5, 0, FH);
-  grad.addColorStop(0, 'rgba(140, 210, 130, 0)');
-  grad.addColorStop(0.4, 'rgba(100, 180, 100, 0.4)');
-  grad.addColorStop(1, 'rgba(55, 140, 70, 0.9)');
+  if (isNight) {
+    grad.addColorStop(0, 'rgba(20, 45, 55, 0)');
+    grad.addColorStop(0.4, 'rgba(15, 40, 50, 0.35)');
+    grad.addColorStop(1, 'rgba(8, 25, 35, 0.85)');
+  } else {
+    grad.addColorStop(0, 'rgba(140, 210, 130, 0)');
+    grad.addColorStop(0.4, 'rgba(100, 180, 100, 0.4)');
+    grad.addColorStop(1, 'rgba(55, 140, 70, 0.9)');
+  }
   fctx.fillStyle = grad;
   fctx.fillRect(0, 0, FW, FH);
 
-  // Grass blades — deeper green foreground
-  fctx.fillStyle = 'rgba(30, 100, 50, 0.75)';
+  // Grass blades foreground
+  fctx.fillStyle = isNight ? 'rgba(6, 20, 30, 0.7)' : 'rgba(30, 100, 50, 0.75)';
   fctx.beginPath();
   fctx.moveTo(0, FH);
   const step = 8;
@@ -1283,7 +1450,7 @@ function drawFlowers() {
 }
 
 // ============ MAIN LOOP ============
-// Pre-render sun: bright warm halo + golden outer glow + luminous disc
+// Pre-render sun (day) or moon (night) — cached sprite
 let moonSprite = null;
 function getMoonSprite() {
   if (moonSprite) return moonSprite;
@@ -1294,53 +1461,107 @@ function getMoonSprite() {
   const cx = c.getContext('2d');
   const cxC = size / 2, cyC = size / 2;
 
-  // Outer warm haze — soft gold, blurred
-  cx.save();
-  cx.filter = 'blur(24px)';
-  const g1 = cx.createRadialGradient(cxC, cyC, 0, cxC, cyC, R * 3.8);
-  g1.addColorStop(0, 'rgba(255, 225, 140, 0.5)');
-  g1.addColorStop(0.4, 'rgba(255, 205, 110, 0.28)');
-  g1.addColorStop(1, 'rgba(255, 200, 100, 0)');
-  cx.fillStyle = g1;
-  cx.fillRect(0, 0, size, size);
-  cx.restore();
+  if (isNight) {
+    // Outer warm haze — pink/peach cloud, blurred
+    cx.save();
+    cx.filter = 'blur(24px)';
+    const g1 = cx.createRadialGradient(cxC, cyC, 0, cxC, cyC, R * 3.8);
+    g1.addColorStop(0, 'rgba(255, 180, 190, 0.35)');
+    g1.addColorStop(0.4, 'rgba(255, 150, 170, 0.2)');
+    g1.addColorStop(1, 'rgba(255, 150, 170, 0)');
+    cx.fillStyle = g1;
+    cx.fillRect(0, 0, size, size);
+    cx.restore();
 
-  // Middle warm glow — bright gold
-  const g2 = cx.createRadialGradient(cxC, cyC, 0, cxC, cyC, R * 2.6);
-  g2.addColorStop(0, 'rgba(255, 240, 170, 0.6)');
-  g2.addColorStop(0.35, 'rgba(255, 215, 130, 0.3)');
-  g2.addColorStop(1, 'rgba(255, 210, 120, 0)');
-  cx.fillStyle = g2;
-  cx.fillRect(0, 0, size, size);
+    const g2 = cx.createRadialGradient(cxC, cyC, 0, cxC, cyC, R * 2.6);
+    g2.addColorStop(0, 'rgba(255, 220, 180, 0.45)');
+    g2.addColorStop(0.35, 'rgba(255, 200, 160, 0.18)');
+    g2.addColorStop(1, 'rgba(255, 200, 160, 0)');
+    cx.fillStyle = g2;
+    cx.fillRect(0, 0, size, size);
 
-  // Inner near-white halo
-  const g3 = cx.createRadialGradient(cxC, cyC, 0, cxC, cyC, R * 1.4);
-  g3.addColorStop(0, 'rgba(255, 255, 235, 0.9)');
-  g3.addColorStop(0.6, 'rgba(255, 250, 220, 0.4)');
-  g3.addColorStop(1, 'rgba(255, 250, 220, 0)');
-  cx.fillStyle = g3;
-  cx.fillRect(0, 0, size, size);
+    const g3 = cx.createRadialGradient(cxC, cyC, 0, cxC, cyC, R * 1.4);
+    g3.addColorStop(0, 'rgba(255, 245, 220, 0.7)');
+    g3.addColorStop(0.6, 'rgba(255, 240, 210, 0.25)');
+    g3.addColorStop(1, 'rgba(255, 240, 210, 0)');
+    cx.fillStyle = g3;
+    cx.fillRect(0, 0, size, size);
 
-  // Sun disc — luminous yellow-white
-  const disc = cx.createRadialGradient(cxC, cyC, 0, cxC, cyC, R);
-  disc.addColorStop(0, 'rgba(255, 255, 245, 1)');
-  disc.addColorStop(0.6, 'rgba(255, 240, 175, 1)');
-  disc.addColorStop(1, 'rgba(255, 210, 110, 1)');
-  cx.fillStyle = disc;
-  cx.beginPath();
-  cx.arc(cxC, cyC, R, 0, Math.PI * 2);
-  cx.fill();
+    // Moon disc — cream, slightly warm
+    cx.fillStyle = 'rgba(255, 248, 225, 0.95)';
+    cx.beginPath();
+    cx.arc(cxC, cyC, R, 0, Math.PI * 2);
+    cx.fill();
 
-  // Bright rim highlight
-  const rim = cx.createRadialGradient(cxC - R * 0.25, cyC - R * 0.25, 0, cxC, cyC, R);
-  rim.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
-  rim.addColorStop(0.7, 'rgba(255, 255, 255, 0)');
-  cx.fillStyle = rim;
-  cx.beginPath();
-  cx.arc(cxC, cyC, R, 0, Math.PI * 2);
-  cx.fill();
+    const rim = cx.createRadialGradient(cxC - R * 0.25, cyC - R * 0.25, 0, cxC, cyC, R);
+    rim.addColorStop(0, 'rgba(255, 255, 240, 0.35)');
+    rim.addColorStop(0.7, 'rgba(255, 255, 240, 0)');
+    cx.fillStyle = rim;
+    cx.beginPath();
+    cx.arc(cxC, cyC, R, 0, Math.PI * 2);
+    cx.fill();
+  } else {
+    // SUN — bright warm halo + golden outer glow + luminous disc
+    cx.save();
+    cx.filter = 'blur(24px)';
+    const g1 = cx.createRadialGradient(cxC, cyC, 0, cxC, cyC, R * 3.8);
+    g1.addColorStop(0, 'rgba(255, 225, 140, 0.5)');
+    g1.addColorStop(0.4, 'rgba(255, 205, 110, 0.28)');
+    g1.addColorStop(1, 'rgba(255, 200, 100, 0)');
+    cx.fillStyle = g1;
+    cx.fillRect(0, 0, size, size);
+    cx.restore();
+
+    const g2 = cx.createRadialGradient(cxC, cyC, 0, cxC, cyC, R * 2.6);
+    g2.addColorStop(0, 'rgba(255, 240, 170, 0.6)');
+    g2.addColorStop(0.35, 'rgba(255, 215, 130, 0.3)');
+    g2.addColorStop(1, 'rgba(255, 210, 120, 0)');
+    cx.fillStyle = g2;
+    cx.fillRect(0, 0, size, size);
+
+    const g3 = cx.createRadialGradient(cxC, cyC, 0, cxC, cyC, R * 1.4);
+    g3.addColorStop(0, 'rgba(255, 255, 235, 0.9)');
+    g3.addColorStop(0.6, 'rgba(255, 250, 220, 0.4)');
+    g3.addColorStop(1, 'rgba(255, 250, 220, 0)');
+    cx.fillStyle = g3;
+    cx.fillRect(0, 0, size, size);
+
+    const disc = cx.createRadialGradient(cxC, cyC, 0, cxC, cyC, R);
+    disc.addColorStop(0, 'rgba(255, 255, 245, 1)');
+    disc.addColorStop(0.6, 'rgba(255, 240, 175, 1)');
+    disc.addColorStop(1, 'rgba(255, 210, 110, 1)');
+    cx.fillStyle = disc;
+    cx.beginPath();
+    cx.arc(cxC, cyC, R, 0, Math.PI * 2);
+    cx.fill();
+
+    const rim = cx.createRadialGradient(cxC - R * 0.25, cyC - R * 0.25, 0, cxC, cyC, R);
+    rim.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
+    rim.addColorStop(0.7, 'rgba(255, 255, 255, 0)');
+    cx.fillStyle = rim;
+    cx.beginPath();
+    cx.arc(cxC, cyC, R, 0, Math.PI * 2);
+    cx.fill();
+  }
 
   moonSprite = c;
+  return c;
+}
+
+// Pre-render per-color star glow sprite (night only)
+const starGlowCache = new Map();
+function getStarGlowSprite(color) {
+  if (starGlowCache.has(color)) return starGlowCache.get(color);
+  const size = 64;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const cx = c.getContext('2d');
+  const g = cx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0, `rgba(${color}, 0.5)`);
+  g.addColorStop(1, `rgba(${color}, 0)`);
+  cx.fillStyle = g;
+  cx.fillRect(0, 0, size, size);
+  starGlowCache.set(color, c);
   return c;
 }
 let t = 0, lastFrame = performance.now(), smoothSpeed = 1;
@@ -1354,31 +1575,51 @@ function draw(now) {
   smoothSpeed += (speedMult - smoothSpeed) * Math.min(dt * 4, 1);
   t += dt * smoothSpeed;
 
-  // Sun (cached sprite)
+  // Sun / Moon (cached sprite)
   const mx = moon.x * W, my = moon.y * H;
   const ms = getMoonSprite();
   ctx.drawImage(ms, mx - ms.width / 2, my - ms.height / 2);
 
-  // Clouds — soft drifting puffs
-  for (const c of clouds) {
-    c.x += c.speed * dt;
-    if (c.x > 1.25) c.x = -0.25;
-    const cx = c.x * W, cy = c.y * H;
-    ctx.globalAlpha = c.alpha;
-    ctx.fillStyle = '#ffffff';
-    for (const p of c.puffs) {
+  if (isNight) {
+    // Stars twinkling
+    for (const s of stars) {
+      s.alpha = s.baseAlpha * (0.5 + 0.5 * Math.sin(s.phase + t * s.speed));
+      const px = s.x * W, py = s.y * H;
       ctx.beginPath();
-      ctx.arc(cx + p.dx * c.scale, cy + p.dy * c.scale, p.r * c.scale, 0, Math.PI * 2);
+      ctx.arc(px, py, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${s.color},${s.alpha})`;
       ctx.fill();
+      if (s.r > 1.6 && s.alpha > 0.6) {
+        const glowR = s.r * 5;
+        ctx.globalAlpha = s.alpha * 0.8;
+        ctx.drawImage(getStarGlowSprite(s.color), px - glowR, py - glowR, glowR * 2, glowR * 2);
+        ctx.globalAlpha = 1;
+      }
     }
-    ctx.globalAlpha = 1;
+  } else {
+    // Clouds — soft drifting puffs
+    for (const c of clouds) {
+      c.x += c.speed * dt;
+      if (c.x > 1.25) c.x = -0.25;
+      const cx = c.x * W, cy = c.y * H;
+      ctx.globalAlpha = c.alpha;
+      ctx.fillStyle = '#ffffff';
+      for (const p of c.puffs) {
+        ctx.beginPath();
+        ctx.arc(cx + p.dx * c.scale, cy + p.dy * c.scale, p.r * c.scale, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
   }
 
-  // Sparkles drifting through the daytime sky
+  // Sparkles (fireflies) + fire burst
   updateFireflies(dt);
+  updateFlames(dt);
   updateRipples(dt);
   drawRipples();
   drawFireflies();
+  drawFlames();
 
   // Butterflies passing by
   updateButterflies(dt);
