@@ -1745,25 +1745,25 @@ function doPeek() {
     s.left = (Math.random() * Math.max(0, vw - w)) + 'px';
     s.right = 'auto';
     hideT = 'translateY(105%) rotate(0deg)';
-    peekT = 'translateY(45%) rotate(0deg)';
+    peekT = 'translateY(30%) rotate(0deg)';
   } else if (side === 'top') {
     s.top = '-10px'; s.bottom = 'auto';
     s.left = (Math.random() * Math.max(0, vw - w)) + 'px';
     s.right = 'auto';
     hideT = 'translateY(-105%) rotate(180deg)';
-    peekT = 'translateY(-45%) rotate(180deg)';
+    peekT = 'translateY(-30%) rotate(180deg)';
   } else if (side === 'left') {
     s.top = (Math.random() * Math.max(0, vh - h)) + 'px'; s.bottom = 'auto';
     s.left = '0px'; s.right = 'auto';
     const hidePx = -Math.round((w + h) / 2 + 30);
-    const peekPx = Math.round(0.48 * h - (w + h) / 2);
+    const peekPx = Math.round(0.63 * h - (w + h) / 2);
     hideT = `translateX(${hidePx}px) rotate(90deg)`;
     peekT = `translateX(${peekPx}px) rotate(90deg)`;
   } else { // right
     s.top = (Math.random() * Math.max(0, vh - h)) + 'px'; s.bottom = 'auto';
     s.left = 'auto'; s.right = '0px';
     const hidePx = Math.round((w + h) / 2 + 30);
-    const peekPx = -Math.round(0.48 * h - (w + h) / 2);
+    const peekPx = -Math.round(0.63 * h - (w + h) / 2);
     hideT = `translateX(${hidePx}px) rotate(-90deg)`;
     peekT = `translateX(${peekPx}px) rotate(-90deg)`;
   }
