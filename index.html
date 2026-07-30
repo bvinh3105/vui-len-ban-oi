@@ -200,7 +200,7 @@
 <canvas id="canvas"></canvas>
 <canvas id="flowers"></canvas>
 <div id="moon-hit" aria-label="mặt trời"></div>
-<audio id="bgm" src="lullaby.mp3" loop preload="auto" playsinline></audio>
+<audio id="bgm" loop preload="auto" playsinline></audio>
 <button id="mute-btn" class="muted" aria-label="Bật/tắt nhạc">🔇</button>
 
 <div class="center">
@@ -218,6 +218,7 @@ document.getElementById('moon-hit').setAttribute('aria-label', isNight ? 'mặt 
 
 // ============ BACKGROUND MUSIC ============
 const bgm = document.getElementById('bgm');
+bgm.src = isNight ? 'lullaby.mp3' : 'daytime.mp3';
 const muteBtn = document.getElementById('mute-btn');
 bgm.volume = 0.5;
 bgm.loop = true;
